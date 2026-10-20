@@ -1,0 +1,1625 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>関東波チェック</title>
+<meta name="description" content="茨城・千葉・湘南の22サーフポイントの波・風・潮・混雑をひと目でチェックできる無料アプリ">
+<meta name="theme-color" content="#0B2733">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="波チェック">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* Layout: a deep-sea app bar over a pale tide sheet. Answer first (verdict, today's pick, one card per coast), then one-line spot rows; a spot opens as its own full screen. */
+:root {
+  --bg: #EDF2F3; --surface: #FFFFFF; --surface2: #F3F7F8; --ink: #0B2230; --muted: #546E78; --faint: #8DA0A8; --line: #D5DFE3;
+  --bar: #0B2733; --bar-ink: #F2F8F9; --bar-muted: rgba(242, 248, 249, .66); --bar-line: rgba(242, 248, 249, .16); --bar-soft: rgba(242, 248, 249, .08); --bar-wave: #6FD3E0; --bar-off: #FFB48A;
+  --deep: #0D3A48; --deep-ink: #F4FAFB; --deep-muted: rgba(244, 250, 251, .74); --deep-soft: rgba(244, 250, 251, .1); --deep-wave: rgba(111, 211, 224, .22); --deep-line: rgba(111, 211, 224, .55);
+  --deep-good: #4AD6A7; --deep-okay: #9AD67F; --deep-fair: #F2C252; --deep-poor: #B3C1C6; --deep-bad: #FF8F85; --deep-danger: #FF6B6B;
+  --accent: #E0590F; --accent-soft: rgba(224, 89, 15, .12);
+  --sea: #0B7285; --sea-soft: rgba(11, 114, 133, .14); --night: rgba(11, 34, 48, .07); --moon: #D19A1F;
+  --good: #0A8A68; --okay: #3E8F36; --fair: #A97404; --poor: #74858C; --bad: #B8382F; --danger: #C1121F;
+  --font-display: "Dela Gothic One", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 16px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #061218; --surface: #0D1F27; --surface2: #112731; --ink: #E2ECEF; --muted: #93A9B2; --faint: #5D7580; --line: #1D3540;
+    --bar: #0A1B23; --bar-ink: #E8F1F3; --bar-muted: rgba(232, 241, 243, .64); --bar-line: rgba(232, 241, 243, .12); --bar-soft: rgba(232, 241, 243, .06);
+    --deep: #0F3543; --deep-soft: rgba(244, 250, 251, .08);
+    --accent: #FF7D3A; --accent-soft: rgba(255, 125, 58, .16);
+    --sea: #3EC1D0; --sea-soft: rgba(62, 193, 208, .17); --night: rgba(0, 0, 0, .3); --moon: #F2D27A;
+    --good: #35C99B; --okay: #86C76E; --fair: #E2B23F; --poor: #8C9EA6; --bad: #EE6F67; --danger: #FF5A5F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #061218; --surface: #0D1F27; --surface2: #112731; --ink: #E2ECEF; --muted: #93A9B2; --faint: #5D7580; --line: #1D3540;
+  --bar: #0A1B23; --bar-ink: #E8F1F3; --bar-muted: rgba(232, 241, 243, .64); --bar-line: rgba(232, 241, 243, .12); --bar-soft: rgba(232, 241, 243, .06);
+  --deep: #0F3543; --deep-soft: rgba(244, 250, 251, .08);
+  --accent: #FF7D3A; --accent-soft: rgba(255, 125, 58, .16);
+  --sea: #3EC1D0; --sea-soft: rgba(62, 193, 208, .17); --night: rgba(0, 0, 0, .3); --moon: #F2D27A;
+  --good: #35C99B; --okay: #86C76E; --fair: #E2B23F; --poor: #8C9EA6; --bad: #EE6F67; --danger: #FF5A5F;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; padding-bottom: env(safe-area-inset-bottom, 0px); }
+html.lock, html.lock body { overflow: hidden; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6; font-feature-settings: "palt" 1;
+  -webkit-tap-highlight-color: transparent;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bar); }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap {
+  max-width: 760px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.t-good { --tone: var(--good); } .t-okay { --tone: var(--okay); } .t-fair { --tone: var(--fair); }
+.t-poor { --tone: var(--poor); } .t-bad { --tone: var(--bad); } .t-danger { --tone: var(--danger); } .t-none { --tone: var(--faint); }
+
+/* ---------- app bar ---------- */
+.bar { position: sticky; top: 0; z-index: 6; background: var(--bar); color: var(--bar-ink); padding-top: env(safe-area-inset-top, 0px); }
+.bar-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-block: 10px 8px; }
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brand svg { width: 26px; height: 26px; flex: none; }
+.brand .name { font-family: var(--font-display); font-size: 19px; letter-spacing: .03em; white-space: nowrap; }
+.logo-sun { fill: var(--accent); }
+.logo-wave { fill: none; stroke: var(--bar-wave); stroke-width: 2.6; stroke-linecap: round; }
+.meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+  font-size: 11.5px; color: var(--bar-muted); border: 1px solid var(--bar-line); white-space: nowrap;
+}
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--deep-good); flex: none; }
+.pill.stale i { background: var(--deep-fair); }
+.pill.none i { background: var(--bar-muted); }
+.pill.busy i { background: var(--bar-wave); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.refresh-btn {
+  border: 1px solid var(--bar-line); background: var(--bar-soft); color: var(--bar-ink); border-radius: 999px; padding: 3px 11px;
+  font-size: 11.5px; cursor: pointer; white-space: nowrap;
+}
+.refresh-btn:disabled { opacity: .55; cursor: default; }
+.days { display: flex; gap: 6px; overflow-x: auto; padding-block: 0 12px; scrollbar-width: none; }
+.days::-webkit-scrollbar { display: none; }
+.day {
+  flex: 0 0 auto; min-width: 58px; display: grid; justify-items: center; padding: 5px 8px; border-radius: 10px; cursor: pointer;
+  background: var(--bar-soft); border: 1px solid var(--bar-line); color: var(--bar-ink); line-height: 1.25;
+}
+.day b { font-size: 13.5px; }
+.day small { font-size: 10.5px; color: var(--bar-muted); }
+.day small.off { color: var(--bar-off); }
+.day .dm { font-size: 13px; font-weight: 700; min-height: 1.2em; }
+.day[aria-selected="true"] { background: var(--bar-ink); border-color: var(--bar-ink); color: var(--bar); }
+.day[aria-selected="true"] small { color: inherit; opacity: .75; }
+
+main.wrap { display: grid; gap: 26px; padding-block: 16px 56px; }
+.sec { margin: 0 0 10px; font-size: 13px; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+
+/* ---------- install hint ---------- */
+.install {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line);
+}
+.install img { width: 40px; height: 40px; border-radius: 10px; }
+.install p { margin: 0; font-size: 13px; line-height: 1.5; }
+.install p b { display: block; font-size: 14px; }
+.install .acts { display: grid; gap: 6px; justify-items: end; }
+.install button { border: 0; border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.install .go { background: var(--accent); color: #fff; }
+.install .no { background: transparent; color: var(--muted); padding: 2px 4px; }
+
+/* ---------- verdict + sky ---------- */
+.verdict { margin: 0 0 12px; font-size: 16.5px; line-height: 1.65; max-width: 40em; text-wrap: pretty; }
+.verdict b { font-weight: 700; }
+.sky {
+  display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px 14px;
+  padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.sky svg { width: 32px; height: 32px; }
+.moon-dark { fill: var(--line); }
+.moon-lit { fill: var(--moon); }
+.fact { display: grid; min-width: 0; }
+.fact b { font-size: 16px; line-height: 1.35; }
+.fact small { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+
+/* ---------- grade, wind, crowd ---------- */
+.grade {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font-weight: 700; font-size: 18px; line-height: 1; color: var(--tone); background: var(--surface2); border: 1.5px solid var(--tone);
+}
+@supports (background: color-mix(in srgb, red 10%, transparent)) {
+  .grade { background: color-mix(in srgb, var(--tone) 13%, transparent); border-color: color-mix(in srgb, var(--tone) 50%, transparent); }
+}
+.grade.sm { width: 26px; height: 26px; font-size: 14px; }
+.w { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.w svg.arw { width: 15px; height: 15px; fill: var(--tone); flex: none; }
+.w .rel { color: var(--tone); font-weight: 700; }
+.when { color: var(--muted); font-size: 11.5px; }
+.cr { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--tone); font-weight: 700; }
+.cr svg { width: 15px; height: 15px; fill: currentColor; flex: none; }
+.bars { display: inline-flex; align-items: flex-end; gap: 1.5px; height: 12px; flex: none; }
+.bars i { display: block; width: 3px; border-radius: 1px; background: var(--line); }
+.bars i:nth-child(1) { height: 4px; } .bars i:nth-child(2) { height: 6px; } .bars i:nth-child(3) { height: 8px; }
+.bars i:nth-child(4) { height: 10px; } .bars i:nth-child(5) { height: 12px; }
+.bars i.on { background: var(--tone); }
+.tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700; line-height: 1.5; padding: 0 7px; border-radius: 999px;
+  color: var(--tone); border: 1px solid var(--tone); white-space: nowrap;
+}
+
+/* ---------- hero ---------- */
+.hero {
+  --good: var(--deep-good); --okay: var(--deep-okay); --fair: var(--deep-fair); --poor: var(--deep-poor); --bad: var(--deep-bad); --danger: var(--deep-danger);
+  position: relative; overflow: hidden; display: grid; gap: 2px; color: var(--deep-ink);
+  background: var(--deep); border-radius: 22px; padding: 18px 18px 22px;
+}
+.hero > * { position: relative; }
+.hero-tide { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 84px; pointer-events: none; }
+.hero-tide path { fill: var(--deep-wave); stroke: none; }
+.hero-tide polyline { fill: none; stroke: var(--deep-line); stroke-width: 1.5; }
+.hero .eyebrow { margin: 0; font-size: 12px; letter-spacing: .14em; color: var(--deep-muted); font-weight: 700; }
+.hero-head { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.hero .grade { background: var(--deep-ink); border-color: var(--deep-ink); }
+.hero-head .word { font-weight: 700; color: var(--tone); }
+.hero h3 { margin: 8px 0 0; font-size: 22px; line-height: 1.3; }
+.hero h3 small { font-size: 13px; color: var(--deep-muted); font-weight: 400; margin-left: 8px; }
+.hero-size { font-family: var(--font-display); font-size: clamp(36px, 11vw, 54px); line-height: 1.1; margin: 6px 0 10px; letter-spacing: .02em; word-break: keep-all; overflow-wrap: anywhere; }
+.hero-line { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13.5px; margin: 0; }
+.hero-line .when { color: var(--deep-muted); }
+.hero .bars i { background: var(--deep-soft); }
+.hero .bars i.on { background: var(--tone); }
+.hero-meta { margin: 8px 0 0; font-size: 13px; color: var(--deep-muted); }
+.hero-open {
+  justify-self: start; margin-top: 14px; border: 0; background: var(--deep-ink); color: var(--deep); border-radius: 999px;
+  padding: 7px 16px; font-size: 13.5px; cursor: pointer; font-weight: 700;
+}
+.note-card { padding: 16px; border-radius: var(--radius); border: 1px dashed var(--line); background: var(--surface); color: var(--muted); font-size: 14px; }
+.note-card b { color: var(--ink); display: block; margin-bottom: 4px; font-size: 15px; }
+.note-card button { margin-top: 10px; border: 0; border-radius: 999px; padding: 6px 14px; font-weight: 700; background: var(--ink); color: var(--bg); cursor: pointer; }
+
+/* ---------- coast cards ---------- */
+.agrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.acard {
+  display: grid; gap: 3px; align-content: start; text-align: left; cursor: pointer; padding: 12px 12px 13px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); min-width: 0;
+}
+.acard .a-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.acard .a-name { font-weight: 700; font-size: 15px; }
+.acard .a-spot { font-size: 12px; color: var(--muted); }
+.acard .a-size { font-family: var(--font-display); font-size: 17px; line-height: 1.35; margin-top: 2px; word-break: keep-all; overflow-wrap: anywhere; }
+.acard .a-row { font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.acard.dim { opacity: .75; }
+
+/* ---------- filters + rows ---------- */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 13px; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); font-weight: 700; }
+.chip-sep { flex: none; width: 1px; background: var(--line); margin: 4px 2px; }
+.groups { display: grid; gap: 22px; }
+.ghead { display: grid; gap: 6px; margin-bottom: 8px; }
+.ghead h3 { margin: 0; font-size: 18px; line-height: 1.3; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ghead h3 small { font-size: 12.5px; color: var(--muted); font-weight: 400; }
+.jma { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+.jma b { color: var(--ink); }
+.rows { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.rows li + li { border-top: 1px solid var(--line); }
+.row {
+  width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 12px; grid-template-areas: "g n s c" "g m m c";
+  gap: 4px 12px; align-items: center; padding: 11px 12px; background: transparent; border: 0; text-align: left; cursor: pointer;
+}
+.row > .grade { grid-area: g; }
+.row .r-name { grid-area: n; min-width: 0; font-weight: 700; font-size: 16px; line-height: 1.35; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.row .r-name .fav { color: var(--accent); font-size: 13px; }
+.row .r-size { grid-area: s; font-family: var(--font-display); font-size: 15.5px; line-height: 1.3; white-space: nowrap; }
+.row .r-meta { grid-area: m; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; font-size: 12px; min-width: 0; }
+.row .r-go { grid-area: c; color: var(--faint); font-size: 20px; line-height: 1; }
+.empty { padding: 16px; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); }
+
+/* ---------- spot screen ---------- */
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; background: var(--bg); }
+.sheet-bar { flex: none; background: var(--bar); color: var(--bar-ink); padding-top: env(safe-area-inset-top, 0px); }
+.sheet-bar-in { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-block: 8px; }
+.back { border: 0; background: transparent; color: var(--bar-ink); font-weight: 700; font-size: 15px; cursor: pointer; padding: 6px 4px; }
+.sheet-day { font-size: 13px; color: var(--bar-muted); }
+.fav-top { border: 1px solid var(--bar-line); background: var(--bar-soft); color: var(--bar-ink); border-radius: 999px; padding: 4px 11px; font-size: 13px; cursor: pointer; }
+.fav-top[aria-pressed="true"] { color: var(--bar-off); border-color: var(--bar-off); }
+.sheet-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.sheet-body { display: grid; gap: 18px; padding-block: 16px calc(40px + env(safe-area-inset-bottom, 0px)); }
+.sp-head { display: grid; gap: 2px; }
+.sp-area { margin: 0; font-size: 12.5px; color: var(--muted); }
+.sp-head h2 { margin: 0; font-size: 26px; line-height: 1.25; }
+.sp-verdict { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.sp-verdict .word { font-weight: 700; color: var(--tone); }
+.sp-size { font-family: var(--font-display); font-size: clamp(34px, 10vw, 48px); line-height: 1.12; margin: 6px 0 2px; word-break: keep-all; overflow-wrap: anywhere; }
+.sp-sub { margin: 0; font-size: 13.5px; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; }
+.dlabel { font-size: 12.5px; color: var(--muted); letter-spacing: .08em; font-weight: 700; margin: 0 0 8px; }
+.dlabel .nowtxt { color: var(--accent); }
+.hchart { display: block; width: 100%; height: auto; }
+.hchart .night { fill: var(--night); }
+.hchart .guide { stroke: var(--line); stroke-dasharray: 3 3; fill: none; }
+.hchart .glab { fill: var(--muted); font-size: 10px; font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.hchart .hbar { fill: var(--tone); }
+.hchart .hbar.dim { opacity: .35; }
+.hchart .axis { fill: var(--muted); font-family: var(--font-data); font-size: 10.5px; }
+.hchart .ws { fill: var(--muted); font-family: var(--font-data); font-size: 10px; }
+.hchart .warr { fill: var(--tone); }
+.hchart .now { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 3; fill: none; }
+.hchart .rowlab { fill: var(--muted); font-size: 10px; font-weight: 700; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+.legend-row span { display: inline-flex; align-items: center; gap: 4px; }
+.legend-row i { width: 10px; height: 10px; border-radius: 2px; background: var(--tone); display: inline-block; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wk {
+  display: grid; justify-items: center; gap: 1px; padding: 7px 2px 8px; border-radius: 10px; cursor: pointer; min-width: 0;
+  background: var(--surface2); border: 1px solid transparent; font-size: 11px; line-height: 1.3;
+}
+.wk b { font-size: 12px; }
+.wk .wm { font-size: 17px; font-weight: 700; color: var(--tone); }
+.wk .wsz { font-family: var(--font-display); font-size: 10.5px; text-align: center; word-break: keep-all; overflow-wrap: anywhere; }
+.wk[aria-current="true"] { border-color: var(--ink); background: var(--surface); }
+.wk small.off { color: var(--accent); }
+.windsum { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 14px; align-items: center; }
+.compass { width: 116px; height: 116px; display: block; }
+.c-land { fill: var(--surface2); stroke: var(--line); stroke-width: 1; }
+.c-sea { fill: var(--sea-soft); stroke: none; }
+.c-beach { stroke: var(--sea); stroke-width: 2.5; stroke-linecap: round; fill: none; }
+.c-lab { font-size: 12px; font-weight: 700; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.c-lab.sea { fill: var(--sea); }
+.c-n { font-size: 10px; fill: var(--faint); }
+.c-tick { stroke: var(--faint); stroke-width: 1.2; }
+.c-arrow { stroke: var(--tone); stroke-width: 4; stroke-linecap: round; fill: none; }
+.c-head { fill: var(--tone); }
+.ws-main { margin: 0; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ws-rel { margin: 2px 0 0; color: var(--tone); font-weight: 700; }
+.ws-desc { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.crowd-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ppl { display: inline-flex; gap: 1px; }
+.ppl svg { width: 19px; height: 19px; fill: var(--line); }
+.ppl svg.on { fill: var(--tone); }
+.crowd-main b { font-size: 18px; color: var(--tone); }
+.crowd-main small { color: var(--muted); font-size: 12px; }
+.crowd-note { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
+.tide { display: block; width: 100%; height: auto; }
+.tide .area { fill: var(--sea-soft); stroke: none; }
+.tide .line { fill: none; stroke: var(--sea); stroke-width: 2.5; }
+.tide .night { fill: var(--night); stroke: none; }
+.tide .grid { stroke: var(--line); stroke-width: 1; fill: none; }
+.tide .axis { fill: var(--muted); font-family: var(--font-data); font-size: 11px; }
+.tide .dot { fill: var(--surface); stroke: var(--sea); stroke-width: 2.2; }
+.tide .lab { fill: var(--ink); font-family: var(--font-data); font-size: 11.5px; font-weight: 500; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.tide .now { stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 3 3; fill: none; }
+.tide .nowdot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 0; }
+.facts div { min-width: 0; }
+.facts dt { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+.facts dd { margin: 0; font-weight: 700; font-size: 14px; line-height: 1.45; }
+.facts dd small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.jma-raw { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.65; }
+.jma-raw b { color: var(--ink); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions a {
+  display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 7px 13px; font-size: 13px; text-decoration: none; font-weight: 700;
+}
+.model-note { margin: 0; font-size: 11.5px; color: var(--faint); }
+
+/* ---------- footer ---------- */
+.about { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 10px; }
+.about p { margin: 0; }
+.about summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+.about ul { padding-left: 1.2em; margin: 8px 0 0; display: grid; gap: 6px; max-width: 65ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .grade { width: 22px; height: 22px; font-size: 12px; }
+
+@media (min-width: 640px) {
+  .agrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .row { padding: 12px 16px; }
+  .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 370px) {
+  .sky { gap: 8px; padding: 10px; }
+  .fact b { font-size: 14px; }
+  .brand .name { font-size: 17px; }
+  .windsum { grid-template-columns: 96px minmax(0, 1fr); }
+  .compass { width: 96px; height: 96px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sheet:not([hidden]) { animation: slidein .2s ease-out; }
+  @keyframes slidein { from { transform: translateY(12px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+@media (prefers-reduced-motion: reduce) { .pill.busy i { animation: none; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <div class="bar-top">
+      <div class="brand">
+        <svg viewBox="0 0 26 26" aria-hidden="true"><circle class="logo-sun" cx="17" cy="9" r="5"/><path class="logo-wave" d="M2 18c3 0 3-3 6-3s3 3 6 3 3-3 6-3 3 3 4.5 3"/><path class="logo-wave" d="M2 23c3 0 3-2 6-2s3 2 6 2 3-2 6-2 3 2 4.5 2" opacity=".55"/></svg>
+        <span class="name">関東波チェック</span>
+      </div>
+      <div class="meta" id="meta"><span class="pill none"><i></i>読み込み中</span></div>
+    </div>
+    <nav class="days" id="days" role="tablist" aria-label="日付"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <section id="install" hidden></section>
+  <section id="summary" aria-label="今日の結論"></section>
+  <section id="picks" aria-label="いちおし"></section>
+  <section id="coasts" aria-label="エリア別"></section>
+  <section id="list" aria-label="ポイント一覧">
+    <h2 class="sec">ポイント一覧</h2>
+    <div class="chips" id="chips" role="toolbar" aria-label="絞り込み"></div>
+    <div class="groups" id="groups"></div>
+  </section>
+  <footer class="about" id="about"></footer>
+</main>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-bar"><div class="wrap sheet-bar-in" id="sheetbar"></div></div>
+  <div class="sheet-scroll" id="sheetscroll"><div class="wrap sheet-body" id="sheetbody"></div></div>
+</div>
+
+<script>/* 関東波チェック core — tides, moon, sun, JMA text parsing and spot scoring (all times JST) */
+(function (root) {
+  'use strict';
+  var D2R = Math.PI / 180;
+  var HOUR = 3600000, DAY = 86400000, JST = 9 * HOUR;
+  function mod360(x) { return ((x % 360) + 360) % 360; }
+  function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+  /* ---------- JST helpers ---------- */
+  function jstKey(ms) { return new Date(ms + JST).toISOString().slice(0, 10); }
+  function jstMidnight(key) { return Date.parse(key + 'T00:00:00+09:00'); }
+  function addDays(key, n) { return jstKey(jstMidnight(key) + n * DAY); }
+  function jstHour(ms) { var d = new Date(ms + JST); return d.getUTCHours() + d.getUTCMinutes() / 60; }
+  function hm(ms) {
+    var d = new Date(ms + JST);
+    return d.getUTCHours() + ':' + String(d.getUTCMinutes()).padStart(2, '0');
+  }
+  function hmFromMin(min) {
+    var m = Math.round(min);
+    return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0');
+  }
+
+  /* ---------- Tide (JMA harmonic constants, κ = local epoch) ---------- */
+  var SPEED = { M2: 28.9841042, S2: 30.0, N2: 28.4397295, K2: 30.0821373, K1: 15.0410686, O1: 13.9430356, P1: 14.9589314, Q1: 13.3986609 };
+  // [amplitude cm, phase lag deg] from JMA 潮位表掲載地点一覧 (2026). z0 = MSL above tide-table datum (cm)
+  var STATIONS = {
+    D1: { name: '日立', lon: 140 + 38 / 60, z0: 86, M2: [30.94, 122.30], S2: [14.62, 155.15], K1: [22.42, 169.65], O1: [17.45, 152.31] },
+    D3: { name: '大洗', lon: 140 + 34 / 60, z0: 87, M2: [30.16, 123.91], S2: [14.47, 156.92], K1: [22.89, 169.73], O1: [17.66, 151.54] },
+    D2: { name: '鹿島', lon: 140 + 42 / 60, z0: 89, M2: [30.60, 125.62], S2: [14.57, 158.33], K1: [23.93, 172.36], O1: [18.90, 152.53] },
+    CS: { name: '銚子漁港', lon: 140 + 52 / 60, z0: 90, M2: [30.35, 127.56], S2: [14.44, 160.32], K1: [23.36, 174.60], O1: [18.93, 155.41] },
+    ZF: { name: '勝浦', lon: 140 + 15 / 60, z0: 90, M2: [36.09, 140.79], S2: [16.51, 169.92], K1: [22.41, 176.94], O1: [17.40, 158.56] },
+    MR: { name: '布良', lon: 139 + 50 / 60, z0: 90, M2: [35.61, 140.10], S2: [16.96, 169.29], K1: [23.20, 176.45], O1: [18.12, 157.43] },
+    D8: { name: '湘南港', lon: 139 + 29 / 60, z0: 92, M2: [36.02, 149.23], S2: [17.01, 176.62], K1: [23.16, 178.82], O1: [18.32, 158.57] }
+  };
+  var PREP = {};
+  function prepStation(key) {
+    if (PREP[key]) return PREP[key];
+    var st = STATIONS[key], c = {};
+    ['M2', 'S2', 'K1', 'O1'].forEach(function (k) {
+      var p = k.charAt(1) === '2' ? 2 : 1;
+      c[k] = { H: st[k][0], G: mod360(st[k][1] - p * st.lon) };
+    });
+    function lin(a, b, sx) {
+      var d = c[b].G - c[a].G; d = ((d + 540) % 360) - 180;
+      return mod360(c[a].G + d * (sx - SPEED[a]) / (SPEED[b] - SPEED[a]));
+    }
+    // minor constituents inferred from the majors (equilibrium ratios, linear phase)
+    c.N2 = { H: 0.1915 * c.M2.H, G: lin('M2', 'S2', SPEED.N2) };
+    c.K2 = { H: 0.2717 * c.S2.H, G: lin('M2', 'S2', SPEED.K2) };
+    c.P1 = { H: 0.3309 * c.K1.H, G: lin('O1', 'K1', SPEED.P1) };
+    c.Q1 = { H: 0.1937 * c.O1.H, G: lin('O1', 'K1', SPEED.Q1) };
+    PREP[key] = c;
+    return c;
+  }
+  function tideAt(key, ms) {
+    var st = STATIONS[key], c = prepStation(key);
+    var T = (ms / DAY + 2440587.5 - 2451545.0) / 36525;
+    var s = 218.3164477 + 481267.88123421 * T;
+    var h = 280.46646 + 36000.76983 * T;
+    var p = 83.3532465 + 4069.0137287 * T;
+    var n = (125.04452 - 1934.136261 * T) * D2R;
+    var tau = 180 + 15 * ((((ms % DAY) + DAY) % DAY) / HOUR);
+    var cN = Math.cos(n), c2 = Math.cos(2 * n), c3 = Math.cos(3 * n), sN = Math.sin(n), s2 = Math.sin(2 * n), s3 = Math.sin(3 * n);
+    var fM2 = 1.0004 - 0.0373 * cN + 0.0002 * c2, uM2 = -2.14 * sN;
+    var fK1 = 1.006 + 0.115 * cN - 0.0088 * c2 + 0.0006 * c3, uK1 = -8.86 * sN + 0.68 * s2 - 0.07 * s3;
+    var fO1 = 1.0089 + 0.1871 * cN - 0.0147 * c2 + 0.0014 * c3, uO1 = 10.8 * sN - 1.34 * s2 + 0.19 * s3;
+    var fK2 = 1.0241 + 0.2863 * cN + 0.0083 * c2 - 0.0015 * c3, uK2 = -17.74 * sN + 0.68 * s2 - 0.04 * s3;
+    var terms = [
+      ['M2', 2 * tau - 2 * s + 2 * h, fM2, uM2],
+      ['S2', 2 * tau, 1, 0],
+      ['N2', 2 * tau - 3 * s + 2 * h + p, fM2, uM2],
+      ['K2', 2 * tau + 2 * h, fK2, uK2],
+      ['K1', tau + h - 90, fK1, uK1],
+      ['O1', tau - 2 * s + h + 90, fO1, uO1],
+      ['P1', tau - h + 90, 1, 0],
+      ['Q1', tau - 3 * s + h + p + 90, fO1, uO1]
+    ];
+    var z = st.z0;
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i], k = c[t[0]];
+      z += t[2] * k.H * Math.cos((t[1] + t[3] - k.G) * D2R);
+    }
+    return z;
+  }
+  // curve every `step` minutes over the JST day plus extremes (refined to the minute)
+  function tideDay(key, dayKey, step) {
+    step = step || 10;
+    var t0 = jstMidnight(dayKey), pts = [], ext = [];
+    for (var m = 0; m <= 1440; m += step) pts.push({ t: t0 + m * 60000, z: tideAt(key, t0 + m * 60000) });
+    var prev2 = tideAt(key, t0 - 10 * 60000), prev = tideAt(key, t0 - 5 * 60000);
+    for (var mm = 0; mm <= 1445; mm += 5) {
+      var z = tideAt(key, t0 + mm * 60000);
+      var type = (prev > prev2 && prev >= z) ? 'high' : (prev < prev2 && prev <= z) ? 'low' : null;
+      if (type) {
+        var best = null;
+        for (var r = -6; r <= 6; r++) {
+          var tt = t0 + (mm - 5) * 60000 + r * 60000, zz = tideAt(key, tt);
+          if (!best || (type === 'high' ? zz > best.z : zz < best.z)) best = { t: tt, z: zz };
+        }
+        if (best.t >= t0 && best.t < t0 + DAY) ext.push({ type: type, t: best.t, z: best.z });
+      }
+      prev2 = prev; prev = z;
+    }
+    return { points: pts, extremes: ext };
+  }
+
+  /* ---------- Moon (Meeus ch.49 new moon) & 潮回り ---------- */
+  function newMoonMs(k) {
+    var T = k / 1236.85, T2 = T * T, T3 = T2 * T, T4 = T3 * T, sin = Math.sin;
+    var jde = 2451550.09766 + 29.530588861 * k + 0.00015437 * T2 - 0.00000015 * T3 + 0.00000000073 * T4;
+    var E = 1 - 0.002516 * T - 0.0000074 * T2;
+    var M = (2.5534 + 29.1053567 * k - 0.0000014 * T2 - 0.00000011 * T3) * D2R;
+    var Mp = (201.5643 + 385.81693528 * k + 0.0107582 * T2 + 0.00001238 * T3 - 0.000000058 * T4) * D2R;
+    var F = (160.7108 + 390.67050284 * k - 0.0016118 * T2 - 0.00000227 * T3 + 0.000000011 * T4) * D2R;
+    var Om = (124.7746 - 1.56375588 * k + 0.0020672 * T2 + 0.00000215 * T3) * D2R;
+    jde += -0.4072 * sin(Mp) + 0.17241 * E * sin(M) + 0.01608 * sin(2 * Mp) + 0.01039 * sin(2 * F) +
+      0.00739 * E * sin(Mp - M) - 0.00514 * E * sin(Mp + M) + 0.00208 * E * E * sin(2 * M) - 0.00111 * sin(Mp - 2 * F) -
+      0.00057 * sin(Mp + 2 * F) + 0.00056 * E * sin(2 * Mp + M) - 0.00042 * sin(3 * Mp) + 0.00042 * E * sin(M + 2 * F) +
+      0.00038 * E * sin(M - 2 * F) - 0.00024 * E * sin(2 * Mp - M) - 0.00017 * sin(Om) - 0.00007 * sin(Mp + 2 * M) +
+      0.00004 * sin(2 * Mp - 2 * F) + 0.00004 * sin(3 * M) + 0.00003 * sin(Mp + M - 2 * F) + 0.00003 * sin(2 * Mp + 2 * F) -
+      0.00003 * sin(Mp + M + 2 * F) + 0.00003 * sin(Mp - M + 2 * F) - 0.00002 * sin(Mp - M - 2 * F) - 0.00002 * sin(3 * Mp + M) +
+      0.00002 * sin(4 * Mp);
+    var A = [[299.77, 0.107408, -0.009173, 0.000325], [251.88, 0.016321, 0, 0.000165], [251.83, 26.651886, 0, 0.000164],
+      [349.42, 36.412478, 0, 0.000126], [84.66, 18.206239, 0, 0.00011], [141.74, 53.303771, 0, 0.000062],
+      [207.14, 2.453732, 0, 0.00006], [154.84, 7.30686, 0, 0.000056], [34.52, 27.261239, 0, 0.000047],
+      [207.19, 0.121824, 0, 0.000042], [291.34, 1.844379, 0, 0.00004], [161.72, 24.198154, 0, 0.000037],
+      [239.56, 25.513099, 0, 0.000035], [331.55, 3.592518, 0, 0.000023]];
+    for (var i = 0; i < A.length; i++) jde += A[i][3] * sin((A[i][0] + A[i][1] * k + A[i][2] * T2) * D2R);
+    return (jde - 2440587.5) * DAY - 69000; // TT -> UT (ΔT ≈ 69 s)
+  }
+  var TIDE_NAMES = [null, '大潮', '大潮', '大潮', '中潮', '中潮', '中潮', '小潮', '小潮', '小潮', '長潮', '若潮', '中潮', '中潮',
+    '大潮', '大潮', '大潮', '大潮', '中潮', '中潮', '中潮', '中潮', '小潮', '小潮', '小潮', '長潮', '若潮', '中潮', '中潮', '大潮', '大潮'];
+  function lunarInfo(dayKey) {
+    var mid = jstMidnight(dayKey), noon = mid + 12 * HOUR, end = mid + DAY;
+    var k = Math.floor(((noon / DAY + 2440587.5) - 2451550.09766) / 29.530588861);
+    while (newMoonMs(k) >= end) k--;
+    while (newMoonMs(k + 1) < end) k++;
+    var nm = newMoonMs(k);
+    var lunarDay = Math.round((mid - jstMidnight(jstKey(nm))) / DAY) + 1;
+    var kk = k; while (newMoonMs(kk) > noon) kk--;
+    var age = (noon - newMoonMs(kk)) / DAY;
+    var syn = (newMoonMs(kk + 1) - newMoonMs(kk)) / DAY;
+    var phase = age / syn; // 0 new, 0.5 full
+    return { lunarDay: lunarDay, tideName: TIDE_NAMES[Math.min(30, Math.max(1, lunarDay))], age: age, phase: phase, illum: (1 - Math.cos(2 * Math.PI * phase)) / 2 };
+  }
+
+  /* ---------- Sun (NOAA approximation) ---------- */
+  function sunTimes(dayKey, lat, lon) {
+    var y = +dayKey.slice(0, 4);
+    var doy = Math.round((jstMidnight(dayKey) - Date.parse(y + '-01-01T00:00:00+09:00')) / DAY) + 1;
+    var ylen = (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 366 : 365;
+    function calc(utcHour, sign) {
+      var g = 2 * Math.PI / ylen * (doy - 1 + (utcHour - 12) / 24);
+      var eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+      var dec = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+      var phi = lat * D2R;
+      var x = Math.cos(90.833 * D2R) / (Math.cos(phi) * Math.cos(dec)) - Math.tan(phi) * Math.tan(dec);
+      var ha = Math.acos(clamp(x, -1, 1)) / D2R;
+      return 720 - 4 * (lon + sign * ha) - eq + 540; // minutes after JST midnight
+    }
+    return { rise: calc(-3, 1), set: calc(8, -1) };
+  }
+
+  /* ---------- JMA text parsing ---------- */
+  function z2h(s) {
+    return String(s == null ? '' : s)
+      .replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); })
+      .replace(/．/g, '.').replace(/[　\s]+/g, ' ').trim();
+  }
+  function parseWaves(text) {
+    var t = z2h(text);
+    if (!t) return null;
+    var main = t.split(/ただし|所により/)[0];
+    var vals = [], all = [];
+    main.replace(/(\d+(?:\.\d+)?)\s*メートル/g, function (_, n) { vals.push(parseFloat(n)); return _; });
+    t.replace(/(\d+(?:\.\d+)?)\s*メートル/g, function (_, n) { all.push(parseFloat(n)); return _; });
+    if (!vals.length) return null;
+    return { from: vals[0], to: vals[vals.length - 1], max: Math.max.apply(null, all), swell: /うねり/.test(t), text: t };
+  }
+  var DIR_DEG = { 北: 0, 北北東: 22.5, 北東: 45, 東北東: 67.5, 東: 90, 東南東: 112.5, 南東: 135, 南南東: 157.5, 南: 180,
+    南南西: 202.5, 南西: 225, 西南西: 247.5, 西: 270, 西北西: 292.5, 北西: 315, 北北西: 337.5 };
+  var STRENGTH = { 'やや強く': 4, '強く': 5, '非常に強く': 6, '猛烈に': 7 };
+  var DIR_RE = /^(北北東|東北東|東南東|南南東|南南西|西南西|西北西|北北西|北東|南東|南西|北西|北|東|南|西)の風$/;
+  function parseWindText(text) {
+    var t = z2h(text);
+    var toks = t ? t.split(' ') : [];
+    var cut = -1;
+    for (var i = 0; i < toks.length - 1; i++) if (toks[i + 1] === 'では') { cut = i; break; }
+    var main = cut >= 0 ? toks.slice(0, cut) : toks;
+    var phases = [], cur = null, after = false;
+    main.forEach(function (w) {
+      var m = w.match(DIR_RE);
+      if (m) { cur = { dir: m[1], deg: DIR_DEG[m[1]], level: null }; phases.push(cur); after = false; return; }
+      if (w === '後') { after = true; return; }
+      if (STRENGTH[w] != null && cur) {
+        if (after) { cur = { dir: cur.dir, deg: cur.deg, level: STRENGTH[w] }; phases.push(cur); }
+        else cur.level = STRENGTH[w];
+        after = false;
+      }
+    });
+    phases.forEach(function (p) { if (p.level == null) p.level = 2.5; });
+    return { phases: phases, sea: cut >= 0 ? toks.slice(cut).join(' ') : '', text: t };
+  }
+  function weatherKind(text) {
+    var t = z2h(text);
+    if (/雪/.test(t)) return 'snow';
+    if (/^雨|^くもり 時々 雨|^くもり 一時 雨|雷/.test(t) || /^雨/.test(t)) return 'rain';
+    if (/^晴/.test(t)) return /くもり|雨/.test(t) ? 'sunCloud' : 'sun';
+    if (/^くもり/.test(t)) return /晴/.test(t) ? 'cloudSun' : (/雨/.test(t) ? 'cloudRain' : 'cloud');
+    if (/雨/.test(t)) return 'rain';
+    return 'cloud';
+  }
+
+  /* ---------- Spot scoring ---------- */
+  var REL = {
+    off: { label: 'オフショア', short: 'オフ', tone: 'good', desc: '陸から海へ吹く風。波の面がきれいに整います' },
+    sideOff: { label: 'サイドオフ', short: 'サイドオフ', tone: 'okay', desc: '陸側から斜めに吹く風。おおむね良い風です' },
+    side: { label: 'サイド', short: 'サイド', tone: 'fair', desc: '岸と平行に吹く風。流されやすく面も乱れがち' },
+    sideOn: { label: 'サイドオン', short: 'サイドオン', tone: 'bad', desc: '海側から斜めに吹く風。波がくずれやすい' },
+    on: { label: 'オンショア', short: 'オン', tone: 'bad', desc: '海から陸へ吹く風。強いと波がぐちゃぐちゃに' }
+  };
+  function windBars(level) { return level == null ? 0 : Math.min(5, Math.max(1, Math.floor(level))); }
+  var DIR8 = ['北', '北東', '東', '南東', '南', '南西', '西', '北西'];
+  function dir8(deg) { return DIR8[Math.round(mod360(deg) / 45) % 8]; }
+  // how hard the day's size is, for the rider deciding whether to go
+  function levelGuide(h) {
+    if (h == null) return null;
+    if (h < 0.75) return { label: '初心者OK', tone: 'good' };
+    if (h < 1.25) return { label: '初級〜中級', tone: 'okay' };
+    if (h < 2.25) return { label: '中級以上', tone: 'fair' };
+    if (h < 3.0) return { label: '上級者向け', tone: 'bad' };
+    return { label: 'エキスパートのみ', tone: 'danger' };
+  }
+  function beginnerOK(slot) {
+    return !!(slot && slot.h != null && slot.h >= 0.3 && slot.h < 1.25 && slot.rel !== 'on' && slot.rel !== 'sideOn' &&
+      (!slot.wind || slot.wind.level <= 3));
+  }
+
+  /* ---------- Japanese public holidays (for crowd estimates) ---------- */
+  var HOL = {};
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function weekday(key) { return new Date(Date.parse(key + 'T12:00:00+09:00')).getUTCDay(); }
+  function nthMonday(y, m, n) {
+    var dw = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    return 1 + ((8 - dw) % 7) + (n - 1) * 7;
+  }
+  function jpHolidays(y) {
+    if (HOL[y]) return HOL[y];
+    var set = {};
+    function add(m, d) { set[y + '-' + pad2(m) + '-' + pad2(d)] = true; }
+    [[1, 1], [2, 11], [2, 23], [4, 29], [5, 3], [5, 4], [5, 5], [8, 11], [11, 3], [11, 23]].forEach(function (md) { add(md[0], md[1]); });
+    add(1, nthMonday(y, 1, 2)); add(7, nthMonday(y, 7, 3)); add(9, nthMonday(y, 9, 3)); add(10, nthMonday(y, 10, 2));
+    var k = y - 1980, q = Math.floor(k / 4);
+    add(3, Math.floor(20.8431 + 0.242194 * k - q));
+    add(9, Math.floor(23.2488 + 0.242194 * k - q));
+    Object.keys(set).forEach(function (key) { // 国民の休日: a weekday between two holidays
+      var mid = addDays(key, 1);
+      if (set[addDays(key, 2)] && !set[mid] && weekday(mid) !== 0) set[mid] = true;
+    });
+    Object.keys(set).sort().forEach(function (key) { // 振替休日
+      if (weekday(key) === 0) { var n = addDays(key, 1); while (set[n]) n = addDays(n, 1); set[n] = true; }
+    });
+    HOL[y] = set;
+    return set;
+  }
+  function isHoliday(key) { return !!jpHolidays(+key.slice(0, 4))[key]; }
+  function isOffDay(key) {
+    var w = weekday(key), md = key.slice(5);
+    var longBreak = md >= '12-29' || md <= '01-03' || (md >= '08-13' && md <= '08-16');
+    return w === 0 || w === 6 || isHoliday(key) || longBreak;
+  }
+
+  /* ---------- Crowd estimate (no live counts exist; this is a model) ---------- */
+  var CROWD = [
+    { max: 1.5, label: '空いてそう', short: '空き', tone: 'good', n: 1 },
+    { max: 3.2, label: 'ふつう', short: 'ふつう', tone: 'okay', n: 2 },
+    { max: 6.5, label: '混みそう', short: '混み', tone: 'fair', n: 3 },
+    { max: Infinity, label: 'かなり混みそう', short: '激混み', tone: 'bad', n: 4 }
+  ];
+  var T_OFF = { 6: 1.0, 9: 1.0, 12: 0.8, 15: 0.65 };
+  var T_WEEK = { 6: 0.75, 9: 0.45, 12: 0.35, 15: 0.4 };
+  var T_WEEK_COMMUTE = { 6: 1.1, 9: 0.5, 12: 0.35, 15: 0.5 }; // 出勤前に入る人が多いエリア
+  var SEASON = [0.7, 0.7, 0.85, 0.9, 0.95, 1.0, 1.15, 1.2, 1.15, 1.0, 0.9, 0.75];
+  function crowdEstimate(spot, dayKey, hour, score, h, weather) {
+    var off = isOffDay(dayKey);
+    var timeF = (off ? T_OFF : (spot.commute ? T_WEEK_COMMUTE : T_WEEK))[hour] || 0.5;
+    var waveF = h == null ? 1 : (h >= 3 ? 0.5 : (score == null ? 1 : score >= 3.5 ? 1.25 : score >= 2.5 ? 1.05 : score >= 1.5 ? 0.85 : 0.6));
+    var wxF = /雨|雪|雷/.test(weather || '') ? 0.7 : 1;
+    var idx = (spot.pop || 3) * (off ? 1.6 : 0.8) * timeF * waveF * SEASON[+dayKey.slice(5, 7) - 1] * wxF;
+    for (var i = 0; i < CROWD.length; i++) {
+      if (idx < CROWD[i].max) return { index: idx, off: off, label: CROWD[i].label, short: CROWD[i].short, tone: CROWD[i].tone, n: CROWD[i].n };
+    }
+  }
+  function relation(facing, deg) {
+    var d = Math.abs(mod360(deg - facing)); if (d > 180) d = 360 - d;
+    if (d < 22.5) return 'on';
+    if (d < 67.5) return 'sideOn';
+    if (d < 112.5) return 'side';
+    if (d < 157.5) return 'sideOff';
+    return 'off';
+  }
+  var WIND_TABLE = {
+    off: [1, 1, 1.0, 0.5, -0.5, -1.5, -2.5],
+    sideOff: [1, 1, 0.5, 0.0, -1.0, -2.0, -3.0],
+    side: [1, 1, 0.0, -0.75, -1.5, -2.5, -3.0],
+    sideOn: [1, 1, -0.5, -1.5, -2.5, -3.0, -3.5],
+    on: [1, 1, -1.0, -2.0, -3.0, -3.5, -4.0]
+  };
+  function windScore(rel, level) {
+    if (level == null || !rel) return 0;
+    var L = clamp(level, 1, 6), a = Math.floor(L), b = Math.ceil(L), row = WIND_TABLE[rel];
+    return row[a] + (row[b] - row[a]) * (L - a);
+  }
+  var SIZE_PTS = [[0, 0], [0.3, 0.5], [0.5, 1.5], [1.0, 3.0], [1.5, 3.8], [2.0, 3.8], [2.5, 3.1], [3.0, 2.2], [4.0, 0.8], [6, 0]];
+  function sizeScore(h) {
+    for (var i = 1; i < SIZE_PTS.length; i++) {
+      if (h <= SIZE_PTS[i][0]) {
+        var a = SIZE_PTS[i - 1], b = SIZE_PTS[i];
+        return a[1] + (b[1] - a[1]) * (h - a[0]) / (b[0] - a[0]);
+      }
+    }
+    return 0;
+  }
+  function sizeLabel(h) {
+    if (h == null) return '—';
+    if (h < 0.4) return 'スネ〜ヒザ';
+    if (h < 0.75) return 'ヒザ〜モモ';
+    if (h < 1.25) return 'コシ〜ハラ';
+    if (h < 1.75) return 'ムネ〜カタ';
+    if (h < 2.25) return 'カタ〜アタマ';
+    if (h < 2.75) return 'アタマ〜頭オーバー';
+    if (h < 3.5) return '頭オーバー';
+    return 'ダブル以上';
+  }
+  function grade(score, h) {
+    if (h != null && h >= 3.5) return { mark: '!', word: '危険・上級者のみ', tone: 'danger' };
+    if (score >= 4) return { mark: '◎', word: 'いい波期待', tone: 'good' };
+    if (score >= 3) return { mark: '○', word: '楽しめそう', tone: 'okay' };
+    if (score >= 2) return { mark: '△', word: 'まあまあ', tone: 'fair' };
+    if (score >= 1) return { mark: '×', word: '厳しそう', tone: 'poor' };
+    return { mark: '－', word: '期待薄', tone: 'bad' };
+  }
+  function scoreSlot(h, swell, rel, level) {
+    var s = sizeScore(h) + (swell && h <= 3 ? 0.4 : 0) + windScore(rel, level);
+    return clamp(s, 0, 5);
+  }
+  function levelRange(level, range) {
+    if (range) { var p = String(range).trim().split(/\s+/); if (p.length === 2) return p[0] + '〜' + p[1] + 'm/s'; }
+    if (level === 2.5) return '10m/s未満';
+    return ({ 1: '0〜2m/s', 2: '3〜5m/s', 3: '6〜9m/s', 4: '10〜14m/s', 5: '15〜19m/s', 6: '20m/s〜', 7: '30m/s〜' })[Math.round(level)] || '';
+  }
+
+  /* ---------- Water temperature climatology (monthly typical, °C) & wetsuit ---------- */
+  var SST = {
+    ibaraki: [11, 10, 10, 12, 15, 18, 21, 24, 23, 20, 17, 13],
+    kujukuri: [13, 12, 12, 14, 16, 19, 22, 25, 24, 22, 19, 15],
+    sotobo: [15, 14, 14, 16, 18, 20, 23, 25, 25, 23, 20, 17],
+    shonan: [14, 13, 14, 16, 18, 21, 24, 26, 25, 22, 19, 16]
+  };
+  function wetsuit(t) {
+    if (t >= 25) return '海パン・ラッシュガード';
+    if (t >= 23) return 'スプリング・タッパー';
+    if (t >= 21) return 'シーガル・ロンスプ';
+    if (t >= 18) return '3/2mmフルスーツ';
+    if (t >= 15) return '5/3mmフル〜セミドライ';
+    if (t >= 12) return 'セミドライ＋ブーツ';
+    return 'セミドライ＋ブーツ・グローブ';
+  }
+  function seaTemp(region, dayKey) {
+    var m = +dayKey.slice(5, 7) - 1, d = +dayKey.slice(8, 10);
+    var arr = SST[region]; if (!arr) return null;
+    // interpolate between month midpoints
+    var cur = arr[m], nxt = d >= 15 ? arr[(m + 1) % 12] : arr[(m + 11) % 12];
+    var w = Math.abs(d - 15) / 30;
+    return cur + (nxt - cur) * w;
+  }
+
+  /* ---------- Assemble a day's evaluation for a spot ---------- */
+  // data = { pref: {code -> doc}, wind: {areaCode -> doc} }
+  function areaDay(data, prefCode, areaCode, dayKey) {
+    var doc = data.pref[prefCode];
+    if (!doc || !doc.timeDefines) return null;
+    var area = (doc.areas || []).filter(function (a) { return a.code === areaCode; })[0];
+    if (!area) return null;
+    var idx = -1;
+    for (var i = 0; i < doc.timeDefines.length; i++) if (jstKey(Date.parse(doc.timeDefines[i])) === dayKey) { idx = i; break; }
+    if (idx < 0) return null;
+    var start = Math.max(Date.parse(doc.timeDefines[idx]), jstMidnight(dayKey));
+    return {
+      waves: parseWaves((area.waves || [])[idx]),
+      wind: parseWindText((area.winds || [])[idx]),
+      weather: z2h((area.weathers || [])[idx]),
+      start: start, end: jstMidnight(dayKey) + DAY,
+      report: doc.reportDatetime, areaName: area.name
+    };
+  }
+  var SLOT_HOURS = [6, 9, 12, 15];
+  function evaluateSpot(spot, data, dayKey, nowMs) {
+    var ad = areaDay(data, spot.pref, spot.area, dayKey);
+    var wdoc = data.wind[spot.area];
+    var slots = [];
+    SLOT_HOURS.forEach(function (hr) {
+      var t = jstMidnight(dayKey) + hr * HOUR;
+      var past = nowMs != null && t + 3 * HOUR <= nowMs;
+      var h = null, swell = false;
+      if (ad && ad.waves) {
+        var mid = t + 1.5 * HOUR;
+        var f = clamp((mid - ad.start) / Math.max(HOUR, ad.end - ad.start), 0, 1);
+        h = ad.waves.from + (ad.waves.to - ad.waves.from) * f;
+        swell = ad.waves.swell;
+      }
+      var w = null;
+      if (wdoc && wdoc.times) {
+        for (var i = 0; i < wdoc.times.length; i++) {
+          var wt = Date.parse(wdoc.times[i]);
+          if (wt === t && wdoc.wind && wdoc.wind[i]) {
+            var e = wdoc.wind[i];
+            var deg = DIR_DEG[e.direction];
+            w = { dir: e.direction, deg: deg, level: +e.speed, range: e.range, src: '3h', weather: (wdoc.weather || [])[i] };
+            break;
+          }
+        }
+      }
+      if (!w && ad && ad.wind && ad.wind.phases.length) {
+        var ph = ad.wind.phases;
+        var p = ph.length === 1 ? ph[0] : (hr < 12 ? ph[0] : ph[ph.length - 1]);
+        w = { dir: p.dir, deg: p.deg, level: p.level, range: null, src: 'day', weather: ad.weather };
+      }
+      var rel = (w && w.deg != null) ? relation(spot.facing, w.deg) : null;
+      var score = (h != null) ? scoreSlot(h, swell, rel, w ? w.level : null) : null;
+      var crowd = crowdEstimate(spot, dayKey, hr, score, h, w ? w.weather : (ad ? ad.weather : ''));
+      slots.push({ hour: hr, t: t, past: past, h: h, swell: swell, wind: w, rel: rel, score: score, crowd: crowd });
+    });
+    var live = slots.filter(function (s) { return !s.past && s.score != null; });
+    var best = null;
+    live.forEach(function (s) { if (!best || s.score > best.score + 1e-9) best = s; });
+    var maxH = null;
+    slots.forEach(function (s) { if (s.h != null && (maxH == null || s.h > maxH)) maxH = s.h; });
+    return {
+      spot: spot, day: dayKey, area: ad, slots: slots, best: best,
+      ended: !!(nowMs != null && slots.every(function (s) { return s.past; })),
+      grade: best ? grade(best.score, best.h) : null, maxH: maxH
+    };
+  }
+
+  /* ---------- Model-based surf estimate (Open-Meteo hourly series) ---------- */
+  function angDiff(a, b) { var d = Math.abs(mod360(a - b)); return d > 180 ? 360 - d : d; }
+  // share of the offshore swell that reaches a beach facing `facing`
+  function exposure(dirFrom, facing) {
+    if (dirFrom == null) return 0.85;
+    var d = angDiff(dirFrom, facing);
+    if (d <= 40) return 1;
+    if (d >= 110) return 0.3;
+    return 1 - (d - 40) / 70 * 0.7;
+  }
+  // breaking face height (m) from significant height and period (Komar–Gaughan, scaled to Japanese surf-report sizes)
+  function faceHeight(hs, tp, dirFrom, facing) {
+    if (hs == null || !(hs >= 0)) return null;
+    var T = (tp && tp > 0) ? tp : 6;
+    return 0.52 * Math.pow(T * hs * hs, 0.4) * exposure(dirFrom, facing);
+  }
+  var PART_MAX = [0.25, 0.4, 0.55, 0.7, 0.85, 1.0, 1.2, 1.45, 1.75, 2.4, 3.2, Infinity];
+  var PART_NAME = ['フラット', 'スネ', 'ヒザ', 'モモ', 'コシ', 'ハラ', 'ムネ', 'カタ', 'アタマ', '頭オーバー', '頭半', 'ダブル'];
+  function part(h) { for (var i = 0; i < PART_MAX.length; i++) if (h < PART_MAX[i]) return PART_NAME[i]; return PART_NAME[PART_NAME.length - 1]; }
+  // one body part, or two neighbouring parts when the height sits near an edge
+  function sizeLabelHb(hb) {
+    if (hb == null) return '—';
+    var i = 0; while (i < PART_MAX.length - 1 && hb >= PART_MAX[i]) i++;
+    var lo = i > 0 ? PART_MAX[i - 1] : 0, hi = PART_MAX[i];
+    var f = isFinite(hi) ? (hb - lo) / (hi - lo) : 0.5;
+    if (f < 0.3 && i > 0) return PART_NAME[i - 1] + '〜' + PART_NAME[i];
+    if (f > 0.7 && i < PART_NAME.length - 1) return PART_NAME[i] + '〜' + PART_NAME[i + 1];
+    return PART_NAME[i];
+  }
+  var HB_PTS = [[0, 0], [0.25, 0.2], [0.4, 0.9], [0.55, 1.6], [0.8, 2.6], [1.1, 3.4], [1.5, 3.9], [2.0, 3.8], [2.5, 3.1], [3.2, 1.9], [4.5, 0.6], [6, 0]];
+  function sizeScoreHb(hb) {
+    for (var i = 1; i < HB_PTS.length; i++) {
+      if (hb <= HB_PTS[i][0]) { var a = HB_PTS[i - 1], b = HB_PTS[i]; return a[1] + (b[1] - a[1]) * (hb - a[0]) / (b[0] - a[0]); }
+    }
+    return 0;
+  }
+  function periodBonus(tp) {
+    if (tp == null) return 0;
+    if (tp >= 11) return 0.6; if (tp >= 9) return 0.35; if (tp >= 7) return 0; if (tp >= 5.5) return -0.3; return -0.6;
+  }
+  // m/s -> continuous wind level used by windScore (1 calm … 6 storm)
+  var WL = [[0, 1], [3, 2], [7, 3], [12, 4], [17, 5], [22, 6]];
+  function windLevel(ms) {
+    if (ms == null) return null;
+    for (var i = 1; i < WL.length; i++) if (ms <= WL[i][0]) { var a = WL[i - 1], b = WL[i]; return a[1] + (b[1] - a[1]) * (ms - a[0]) / (b[0] - a[0]); }
+    return 6;
+  }
+  function gradeHb(score, hb) {
+    if (hb != null && hb >= 3.2) return { mark: '!', word: '危険・上級者のみ', tone: 'danger' };
+    return grade(score, null);
+  }
+  function levelGuideHb(hb) {
+    if (hb == null) return null;
+    if (hb < 0.7) return { label: '初心者OK', tone: 'good' };
+    if (hb < 1.0) return { label: '初級〜中級', tone: 'okay' };
+    if (hb < 1.5) return { label: '中級以上', tone: 'fair' };
+    if (hb < 2.4) return { label: '上級者向け', tone: 'bad' };
+    return { label: 'エキスパートのみ', tone: 'danger' };
+  }
+  function beginnerHour(h) {
+    return !!(h && h.hb != null && h.hb >= 0.3 && h.hb < 1.0 && h.rel !== 'on' && h.rel !== 'sideOn' && (h.ws == null || h.ws <= 6));
+  }
+  var WMO = [[0, '快晴'], [1, '晴れ'], [2, '晴れ時々くもり'], [3, 'くもり'], [48, '霧'], [57, '霧雨'], [67, '雨'], [77, '雪'], [82, 'にわか雨'], [86, 'にわか雪'], [99, '雷雨']];
+  function wmoText(code) {
+    if (code == null) return '';
+    for (var i = 0; i < WMO.length; i++) if (code <= WMO[i][0]) return WMO[i][1];
+    return '';
+  }
+  function crowdBucket(hr) { return hr <= 7 ? 6 : hr <= 10 ? 9 : hr <= 13 ? 12 : 15; }
+  // series: { t:[ms], hs, wdir, tp, sh, sdir, stp, sst, ws, wd, wg, code, temp } (arrays aligned by index)
+  function evalSeries(spot, s, dayKey, nowMs) {
+    var t0 = jstMidnight(dayKey), sun = sunTimes(dayKey, spot.lat, spot.lon), hours = [];
+    for (var i = 0; i < s.t.length; i++) {
+      var t = s.t[i];
+      if (t < t0 || t >= t0 + DAY) continue;
+      var hr = Math.round((t - t0) / HOUR);
+      var hs = s.hs[i], sh = s.sh[i];
+      var swellLed = sh != null && hs != null && sh >= 0.5 * hs;
+      var tp = swellLed && s.stp[i] != null ? s.stp[i] : s.tp[i];
+      var dir = swellLed && s.sdir[i] != null ? s.sdir[i] : s.wdir[i];
+      var hb = faceHeight(hs, tp, dir, spot.facing);
+      var rel = s.wd[i] != null ? relation(spot.facing, s.wd[i]) : null;
+      var lvl = windLevel(s.ws[i]);
+      var score = hb == null ? null : clamp(sizeScoreHb(hb) + periodBonus(tp) + (rel ? windScore(rel, lvl) : 0), 0, 5);
+      var daylight = hr * 60 >= sun.rise - 40 && hr * 60 <= sun.set;
+      var code = s.code[i];
+      var crowd = crowdEstimate(spot, dayKey, crowdBucket(hr), score, hb != null && hb >= 2.4 ? 3 : hb, code != null && code >= 51 ? '雨' : '');
+      hours.push({
+        hour: hr, t: t, hs: hs, sh: sh, tp: tp, dir: dir, hb: hb, ws: s.ws[i], wg: s.wg[i], wd: s.wd[i], rel: rel, level: lvl,
+        score: score, code: code, temp: s.temp[i], sst: s.sst[i], daylight: daylight, crowd: crowd,
+        past: nowMs != null && t + HOUR <= nowMs
+      });
+    }
+    var best = null;
+    hours.forEach(function (h) { if (h.daylight && !h.past && h.score != null && (!best || h.score > best.score + 1e-9)) best = h; });
+    var dayHours = hours.filter(function (h) { return h.daylight; });
+    var ended = nowMs != null && dayHours.length > 0 && dayHours.every(function (h) { return h.past; });
+    return { spot: spot, day: dayKey, hours: hours, best: best, grade: best ? gradeHb(best.score, best.hb) : null, ended: ended, sun: sun };
+  }
+
+  var API = {
+    HOUR: HOUR, DAY: DAY, jstKey: jstKey, jstMidnight: jstMidnight, addDays: addDays, jstHour: jstHour, hm: hm, hmFromMin: hmFromMin,
+    STATIONS: STATIONS, tideAt: tideAt, tideDay: tideDay, newMoonMs: newMoonMs, lunarInfo: lunarInfo, sunTimes: sunTimes,
+    z2h: z2h, parseWaves: parseWaves, parseWindText: parseWindText, weatherKind: weatherKind, DIR_DEG: DIR_DEG,
+    REL: REL, relation: relation, windScore: windScore, windBars: windBars, sizeScore: sizeScore, sizeLabel: sizeLabel, grade: grade,
+    dir8: dir8, levelGuide: levelGuide, beginnerOK: beginnerOK,
+    angDiff: angDiff, exposure: exposure, faceHeight: faceHeight, sizeLabelHb: sizeLabelHb, sizeScoreHb: sizeScoreHb, part: part,
+    periodBonus: periodBonus, windLevel: windLevel, gradeHb: gradeHb, levelGuideHb: levelGuideHb, beginnerHour: beginnerHour,
+    wmoText: wmoText, evalSeries: evalSeries,
+    jpHolidays: jpHolidays, isHoliday: isHoliday, isOffDay: isOffDay, weekday: weekday, crowdEstimate: crowdEstimate,
+    scoreSlot: scoreSlot, levelRange: levelRange, seaTemp: seaTemp, wetsuit: wetsuit, areaDay: areaDay, evaluateSpot: evaluateSpot
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.NamiCore = API;
+})(typeof window !== 'undefined' ? window : this);
+</script>
+<script>
+(function () {
+  'use strict';
+  var C = window.NamiCore;
+  var HOUR = C.HOUR, DAY = C.DAY;
+  var WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+  var DAYS_AHEAD = 7;
+
+  var GROUPS = [
+    { id: 'ibaraki', name: '茨城', sub: '日立〜鹿嶋', pref: '080000' },
+    { id: 'chibaN', name: '千葉北', sub: '九十九里〜一宮〜太東', pref: '120000' },
+    { id: 'chibaS', name: '千葉南', sub: '御宿〜鴨川〜館山', pref: '120000' },
+    { id: 'shonan', name: '湘南', sub: '鎌倉〜大磯', pref: '140000' }
+  ];
+  // facing = compass direction the beach looks out to sea; pop = how busy the spot usually is (1–5); cam = live-camera search words
+  var SPOTS = [
+    { id: 'kawarago', name: '河原子', town: '日立市', group: 'ibaraki', area: '080010', lat: 36.560, lon: 140.660, facing: 100, tide: 'D1', pop: 3, cam: '河原子海岸 ライブカメラ' },
+    { id: 'ajigaura', name: '阿字ヶ浦', town: 'ひたちなか市', group: 'ibaraki', area: '080010', lat: 36.389, lon: 140.612, facing: 110, tide: 'D3', pop: 3, cam: '阿字ヶ浦 ライブカメラ' },
+    { id: 'oarai', name: '大洗', town: '大洗町', group: 'ibaraki', area: '080010', lat: 36.297, lon: 140.566, facing: 110, tide: 'D3', pop: 2, cam: '大洗 海岸 ライブカメラ' },
+    { id: 'ohtake', name: '大竹', town: '鉾田市', group: 'ibaraki', area: '080020', lat: 36.140, lon: 140.590, facing: 105, tide: 'D2', pop: 3, cam: '大竹海岸 ライブカメラ' },
+    { id: 'kashima', name: '鹿島（下津）', town: '鹿嶋市', group: 'ibaraki', area: '080020', lat: 35.975, lon: 140.670, facing: 100, tide: 'D2', pop: 2, cam: '下津海岸 ライブカメラ' },
+    { id: 'iioka', name: '飯岡', town: '旭市', group: 'chibaN', area: '120020', lat: 35.700, lon: 140.730, facing: 150, tide: 'CS', pop: 2, cam: '飯岡 海岸 ライブカメラ' },
+    { id: 'katakai', name: '片貝', town: '九十九里町', group: 'chibaN', area: '120020', lat: 35.538, lon: 140.470, facing: 125, tide: 'CS', pop: 3, cam: '片貝 海岸 ライブカメラ' },
+    { id: 'shirako', name: '白子', town: '白子町', group: 'chibaN', area: '120020', lat: 35.455, lon: 140.425, facing: 115, tide: 'ZF', pop: 3, cam: '白子 海岸 ライブカメラ' },
+    { id: 'ichinomiya', name: '一宮・志田下', town: '一宮町', group: 'chibaN', area: '120020', lat: 35.360, lon: 140.390, facing: 100, tide: 'ZF', pop: 5, cam: '一宮海岸 志田下 ライブカメラ' },
+    { id: 'torami', name: '東浪見', town: '一宮町', group: 'chibaN', area: '120020', lat: 35.330, lon: 140.392, facing: 100, tide: 'ZF', pop: 4, cam: '東浪見 ライブカメラ' },
+    { id: 'taito', name: '太東', town: 'いすみ市', group: 'chibaN', area: '120030', lat: 35.290, lon: 140.395, facing: 115, tide: 'ZF', pop: 4, cam: '太東 海岸 ライブカメラ' },
+    { id: 'onjuku', name: '御宿', town: '御宿町', group: 'chibaS', area: '120030', lat: 35.185, lon: 140.355, facing: 150, tide: 'ZF', pop: 3, cam: '御宿 海岸 ライブカメラ' },
+    { id: 'hebara', name: '部原', town: '勝浦市', group: 'chibaS', area: '120030', lat: 35.165, lon: 140.315, facing: 120, tide: 'ZF', pop: 3, cam: '部原 ライブカメラ' },
+    { id: 'kamogawa', name: '鴨川', town: '鴨川市', group: 'chibaS', area: '120030', lat: 35.110, lon: 140.105, facing: 135, tide: 'ZF', pop: 3, cam: '鴨川 海岸 ライブカメラ' },
+    { id: 'chikura', name: '千倉', town: '南房総市', group: 'chibaS', area: '120030', lat: 34.955, lon: 139.965, facing: 115, tide: 'MR', pop: 2, cam: '千倉 海岸 ライブカメラ' },
+    { id: 'heisaura', name: '平砂浦', town: '館山市', group: 'chibaS', area: '120030', lat: 34.905, lon: 139.805, facing: 200, tide: 'MR', pop: 2, cam: '平砂浦 ライブカメラ' },
+    { id: 'shichirigahama', name: '七里ヶ浜', town: '鎌倉市', group: 'shonan', area: '140010', lat: 35.303, lon: 139.512, facing: 190, tide: 'D8', pop: 3, commute: true, cam: '七里ヶ浜 ライブカメラ' },
+    { id: 'kugenuma', name: '鵠沼', town: '藤沢市', group: 'shonan', area: '140010', lat: 35.313, lon: 139.473, facing: 180, tide: 'D8', pop: 5, commute: true, cam: '鵠沼海岸 ライブカメラ' },
+    { id: 'tsujido', name: '辻堂', town: '藤沢市', group: 'shonan', area: '140010', lat: 35.318, lon: 139.447, facing: 180, tide: 'D8', pop: 4, commute: true, cam: '辻堂海岸 ライブカメラ' },
+    { id: 'chigasaki', name: '茅ヶ崎', town: '茅ヶ崎市', group: 'shonan', area: '140010', lat: 35.317, lon: 139.410, facing: 175, tide: 'D8', pop: 4, commute: true, cam: '茅ヶ崎 海岸 ライブカメラ' },
+    { id: 'hiratsuka', name: '平塚', town: '平塚市', group: 'shonan', area: '140010', lat: 35.317, lon: 139.355, facing: 185, tide: 'D8', pop: 3, commute: true, cam: '平塚 海岸 ライブカメラ' },
+    { id: 'oiso', name: '大磯', town: '大磯町', group: 'shonan', area: '140010', lat: 35.303, lon: 139.310, facing: 165, tide: 'D8', pop: 2, commute: true, cam: '大磯 海岸 ライブカメラ' }
+  ];
+  SPOTS.forEach(function (s, i) { s.order = i; });
+  var SPOT_BY_ID = {}; SPOTS.forEach(function (s) { SPOT_BY_ID[s.id] = s; });
+  var GROUP_BY_ID = {}; GROUPS.forEach(function (g) { GROUP_BY_ID[g.id] = g; });
+  var JMA_AREA = { '080010': '茨城県北部', '080020': '茨城県南部', '120020': '千葉県北東部', '120030': '千葉県南部', '140010': '神奈川県東部' };
+  var FILTERS = [{ id: 'all', label: 'すべて' }, { id: 'fav', label: '★ お気に入り' }, { id: 'beginner', label: '初心者OK' }];
+  var WATER = { ibaraki: 'ibaraki', chibaN: 'kujukuri', chibaS: 'sotobo', shonan: 'shonan' };
+
+  /* ---------- data source: Open-Meteo (model values, free for non-commercial use) ---------- */
+  var MARINE = 'https://marine-api.open-meteo.com/v1/marine';
+  var WX = 'https://api.open-meteo.com/v1/forecast';
+  var MARINE_VARS = ['wave_height', 'wave_direction', 'wave_period', 'swell_wave_height', 'swell_wave_direction', 'swell_wave_period', 'sea_surface_temperature'];
+  var WX_VARS = ['wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'weather_code', 'temperature_2m'];
+  var CACHE_KEY = 'om:v1:' + SPOTS.length, MAX_AGE = 45 * 60000;
+
+  var store = {
+    get: function (k) { try { var v = localStorage.getItem('nami:' + k); return v == null ? null : JSON.parse(v); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem('nami:' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  };
+  var state = {
+    now: Date.now(), day: null, filter: store.get('filter') || 'all', open: null,
+    favs: (store.get('favs') || []).filter(function (id) { return SPOT_BY_ID[id]; }),
+    series: null, fetchedAt: null, loading: false, error: null, jma: {},
+    installHidden: !!store.get('installHidden'), installPrompt: null
+  };
+  if (FILTERS.concat(GROUPS).map(function (x) { return x.id; }).indexOf(state.filter) < 0) state.filter = 'all';
+
+  function omUrl(base, vars, extra) {
+    var lat = SPOTS.map(function (s) { return s.lat.toFixed(3); }).join(',');
+    var lon = SPOTS.map(function (s) { return s.lon.toFixed(3); }).join(',');
+    return base + '?latitude=' + lat + '&longitude=' + lon + '&hourly=' + vars.join(',') + '&timezone=Asia%2FTokyo&forecast_days=' + DAYS_AHEAD + (extra || '');
+  }
+  function getJSON(u) {
+    return fetch(u, { cache: 'no-store' }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok || (j && j.error)) throw new Error((j && j.reason) || ('HTTP ' + r.status));
+        return j;
+      });
+    });
+  }
+  function hourlyOnly(resp) { return (Array.isArray(resp) ? resp : [resp]).map(function (x) { return x && x.hourly ? x.hourly : null; }); }
+  function num(arr, j) { var v = arr ? arr[j] : null; return typeof v === 'number' && isFinite(v) ? v : null; }
+  function toSeries(marine, wx) {
+    var out = {};
+    SPOTS.forEach(function (s, i) {
+      var m = marine[i], w = wx[i];
+      if (!m || !Array.isArray(m.time)) return;
+      var widx = {};
+      if (w && Array.isArray(w.time)) w.time.forEach(function (t, j) { widx[t] = j; });
+      var ser = { t: [], hs: [], wdir: [], tp: [], sh: [], sdir: [], stp: [], sst: [], ws: [], wd: [], wg: [], code: [], temp: [] };
+      m.time.forEach(function (t, j) {
+        var k = widx[t];
+        ser.t.push(Date.parse(t + ':00+09:00'));
+        ser.hs.push(num(m.wave_height, j)); ser.wdir.push(num(m.wave_direction, j)); ser.tp.push(num(m.wave_period, j));
+        ser.sh.push(num(m.swell_wave_height, j)); ser.sdir.push(num(m.swell_wave_direction, j)); ser.stp.push(num(m.swell_wave_period, j));
+        ser.sst.push(num(m.sea_surface_temperature, j));
+        ser.ws.push(k == null ? null : num(w.wind_speed_10m, k)); ser.wd.push(k == null ? null : num(w.wind_direction_10m, k));
+        ser.wg.push(k == null ? null : num(w.wind_gusts_10m, k)); ser.code.push(k == null ? null : num(w.weather_code, k));
+        ser.temp.push(k == null ? null : num(w.temperature_2m, k));
+      });
+      out[s.id] = ser;
+    });
+    return out;
+  }
+  var evalCache = {};
+  function applyPack(pack) { state.series = toSeries(pack.marine || [], pack.wx || []); state.fetchedAt = pack.at; evalCache = {}; }
+  function load(force) {
+    var cached = store.get(CACHE_KEY);
+    if (cached && !state.series) applyPack(cached);
+    if (!force && cached && Date.now() - cached.at < MAX_AGE) { render(); return; }
+    if (state.loading) return;
+    state.loading = true; state.error = null; render();
+    Promise.all([
+      getJSON(omUrl(MARINE, MARINE_VARS, '&cell_selection=sea')),
+      getJSON(omUrl(WX, WX_VARS, '&wind_speed_unit=ms'))
+    ]).then(function (r) {
+      var pack = { at: Date.now(), marine: hourlyOnly(r[0]), wx: hourlyOnly(r[1]) };
+      store.set(CACHE_KEY, pack);
+      applyPack(pack);
+    }).catch(function (e) {
+      state.error = navigator.onLine === false ? 'オフラインです' : ((e && e.message) || '通信エラー');
+    }).then(function () { state.loading = false; render(); });
+  }
+  // the official JMA wording, relayed as published (shown only if the browser can read it)
+  function loadJMA() {
+    ['080000', '120000', '140000'].forEach(function (code) {
+      fetch('https://www.jma.go.jp/bosai/forecast/data/forecast/' + code + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        var first = j && j[0], ts = first && first.timeSeries && first.timeSeries[0];
+        if (!ts || !Array.isArray(ts.areas)) return;
+        state.jma[code] = {
+          reportDatetime: first.reportDatetime, timeDefines: ts.timeDefines,
+          areas: ts.areas.map(function (a) { return { code: a.area && a.area.code, name: a.area && a.area.name, waves: a.waves || [], winds: a.winds || [], weathers: a.weathers || [] }; })
+        };
+        render();
+      }).catch(function () { /* not readable from this browser; the app works without it */ });
+    });
+  }
+
+  /* ---------- helpers ---------- */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function todayKey() { return C.jstKey(state.now); }
+  function md(key) { return (+key.slice(5, 7)) + '/' + (+key.slice(8, 10)); }
+  function wd(key) { return WEEK[C.weekday(key)]; }
+  function dayList() { var t = todayKey(), out = []; for (var i = 0; i < DAYS_AHEAD; i++) out.push(C.addDays(t, i)); return out; }
+  function dayName(day) { var t = todayKey(); return day === t ? '今日' : day === C.addDays(t, 1) ? '明日' : md(day) + '(' + wd(day) + ')'; }
+  function hm(ms) { return C.hm(ms); }
+  function relTone(rel) { return rel ? C.REL[rel].tone : 'none'; }
+  function arrow(deg) {
+    if (deg == null) return '';
+    return '<svg class="arw" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(' + ((deg + 180) % 360) + 'deg)"><path d="M12 1.5 19.5 10.5H14.2V22.5H9.8V10.5H4.5Z"/></svg>';
+  }
+  function bars(level) {
+    var n = C.windBars(level), s = '<span class="bars" aria-hidden="true">';
+    for (var i = 1; i <= 5; i++) s += '<i' + (i <= n ? ' class="on"' : '') + '></i>';
+    return s + '</span>';
+  }
+  var PERSON = '<path d="M12 4.2a3.4 3.4 0 1 1 0 6.8 3.4 3.4 0 0 1 0-6.8ZM5.5 20.5c0-3.8 2.9-7 6.5-7s6.5 3.2 6.5 7Z"/>';
+  function people(n) {
+    var s = '<span class="ppl" aria-hidden="true">';
+    for (var i = 1; i <= 4; i++) s += '<svg viewBox="0 0 24 24"' + (i <= n ? ' class="on"' : '') + '>' + PERSON + '</svg>';
+    return s + '</span>';
+  }
+  function moonSvg(phase) {
+    var r = 10, cx = 12, cy = 12, k = Math.cos(2 * Math.PI * phase), rx = Math.abs(k) * r, waxing = phase < 0.5;
+    var limb = waxing ? 1 : 0, term = ((k > 0) === waxing) ? 0 : 1;
+    var d = 'M' + cx + ',' + (cy - r) + ' A' + r + ',' + r + ' 0 0 ' + limb + ' ' + cx + ',' + (cy + r) + ' A' + rx.toFixed(2) + ',' + r + ' 0 0 ' + term + ' ' + cx + ',' + (cy - r) + ' Z';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="moon-dark" cx="12" cy="12" r="10"/><path class="moon-lit" d="' + d + '"/></svg>';
+  }
+  function sizeHTML(hb) { return C.sizeLabelHb(hb).replace('〜', '〜<wbr>'); }
+  function fmt1(v) { return v == null ? '—' : (Math.round(v * 10) / 10).toFixed(1); }
+  var tideCache = {};
+  function tideFor(station, day) {
+    var k = station + '|' + day;
+    if (!tideCache[k]) tideCache[k] = C.tideDay(station, day, 10);
+    return tideCache[k];
+  }
+  function evalFor(spot, day) {
+    var k = spot.id + '|' + day + '|' + Math.floor(state.now / 60000);
+    if (evalCache[k]) return evalCache[k];
+    var ser = state.series && state.series[spot.id];
+    var ev = ser ? C.evalSeries(spot, ser, day, state.now) : { spot: spot, day: day, hours: [], best: null, grade: null, ended: false };
+    evalCache[k] = ev;
+    return ev;
+  }
+  function currentDay() {
+    var days = dayList();
+    if (state.day && days.indexOf(state.day) >= 0) return state.day;
+    state.day = null;
+    return C.jstHour(state.now) >= 17.5 ? days[1] : days[0];
+  }
+  function whenWord(h, day) {
+    if (!h) return '';
+    if (day === todayKey() && state.now >= h.t && state.now < h.t + HOUR) return 'いま';
+    return h.hour + '時ごろ';
+  }
+  function windInline(h) {
+    if (!h || h.ws == null) return '<span class="w t-none">風データなし</span>';
+    return '<span class="w t-' + relTone(h.rel) + '">' + arrow(h.wd) + '<b>' + C.dir8(h.wd) + '</b><span class="num">' + Math.round(h.ws) + 'm/s</span>' + bars(h.level) +
+      (h.rel ? '<span class="rel">' + C.REL[h.rel].label + '</span>' : '') + '</span>';
+  }
+  function windCompact(h) {
+    if (!h || h.ws == null) return '<span class="w t-none">風データなし</span>';
+    return '<span class="w t-' + relTone(h.rel) + '">' + arrow(h.wd) + (h.rel ? '<span class="rel">' + C.REL[h.rel].label + '</span>' : '') + '<span class="num">' + Math.round(h.ws) + 'm/s</span></span>';
+  }
+  function crowdInline(h, short) {
+    if (!h || !h.crowd) return '';
+    return '<span class="cr t-' + h.crowd.tone + '" title="混雑予想"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERSON + '</svg>' + (short ? h.crowd.short : h.crowd.label) + '</span>';
+  }
+  function swellText(h) {
+    if (!h || h.hs == null) return '';
+    return 'うねり ' + fmt1(h.sh != null ? h.sh : h.hs) + 'm・' + (h.tp != null ? Math.round(h.tp) + '秒' : '—') + (h.dir != null ? '・' + C.dir8(h.dir) + 'から' : '');
+  }
+  function nextTides(spot, day) {
+    var ex = tideFor(spot.tide, day).extremes, t0 = C.jstMidnight(day);
+    var pick = day === todayKey() ? ex.filter(function (e) { return e.t > state.now; }) : ex.filter(function (e) { return e.t >= t0 + 4 * HOUR && e.t <= t0 + 19 * HOUR; });
+    return pick.slice(0, 2).map(function (e) { return (e.type === 'high' ? '満潮' : '干潮') + ' ' + hm(e.t); });
+  }
+  function dayBest(day, onlyFavs) {
+    var best = null;
+    SPOTS.forEach(function (s) {
+      if (onlyFavs && state.favs.indexOf(s.id) < 0) return;
+      var e = evalFor(s, day);
+      if (e.best && (!best || e.best.score > best.best.score)) best = e;
+    });
+    return best;
+  }
+
+  /* ---------- the day's story ---------- */
+  function coastBests(evals) {
+    return GROUPS.map(function (g) {
+      var list = evals.filter(function (e) { return e.spot.group === g.id && e.best; })
+        .sort(function (a, b) { return (b.best.score - a.best.score) || (a.spot.order - b.spot.order); });
+      return { g: g, best: list[0] || null };
+    });
+  }
+  function whyHard(b) {
+    if (b.hb != null && b.hb >= 2.4) return '波が大きすぎて';
+    if (b.rel === 'on' || b.rel === 'sideOn') return 'オンショアで';
+    if (b.ws != null && b.ws >= 9) return '風が強くて';
+    if (b.hb != null && b.hb < 0.5) return '波が小さくて';
+    return '条件がそろわず';
+  }
+  function verdictText(day, evals) {
+    var cb = coastBests(evals).filter(function (x) { return x.best; }).sort(function (a, b) { return b.best.best.score - a.best.best.score; });
+    if (!cb.length) return null;
+    var top = cb[0], tb = top.best.best, dn = dayName(day), lead;
+    if (tb.score >= 3) lead = dn + 'は' + top.g.name + 'が狙い目。';
+    else if (tb.score >= 2) lead = dn + 'はどこも決め手に欠けます。比べるなら' + top.g.name + '。';
+    else lead = dn + 'は全体的に厳しめ。入るなら' + top.g.name + 'がまだまし。';
+    var rest = top.best.spot.name + 'で' + C.sizeLabelHb(tb.hb) + (tb.rel ? '、' + C.REL[tb.rel].label : '') + '（' + whenWord(tb, day) + '）。';
+    var low = cb[cb.length - 1];
+    if (cb.length > 1 && low.best.best.score < 2 && low.g.id !== top.g.id) rest += low.g.name + 'は' + whyHard(low.best.best) + '厳しめ。';
+    if (C.isOffDay(day)) rest += '休日なので人気ポイントは混雑に注意。';
+    return { lead: lead, rest: rest };
+  }
+
+  /* ---------- top of page ---------- */
+  function renderMeta() {
+    var html;
+    if (state.loading && !state.series) html = '<span class="pill busy"><i></i>読み込み中</span>';
+    else if (state.loading) html = '<span class="pill busy"><i></i>更新中</span>';
+    else if (state.error && state.fetchedAt) html = '<span class="pill stale"><i></i>' + hm(state.fetchedAt) + '取得・更新失敗</span>';
+    else if (state.error) html = '<span class="pill none"><i></i>取得できませんでした</span>';
+    else if (state.fetchedAt) html = '<span class="pill' + (state.now - state.fetchedAt > 3 * HOUR ? ' stale' : '') + '"><i></i>' + (C.jstKey(state.fetchedAt) === todayKey() ? '' : md(C.jstKey(state.fetchedAt)) + ' ') + hm(state.fetchedAt) + '取得</span>';
+    else html = '<span class="pill none"><i></i>読み込み中</span>';
+    html += '<button class="refresh-btn" data-action="refresh"' + (state.loading ? ' disabled' : '') + '>更新</button>';
+    document.getElementById('meta').innerHTML = html;
+  }
+  function renderDays(day) {
+    var favMode = state.favs.length > 0;
+    document.getElementById('days').innerHTML = dayList().map(function (d, i) {
+      var off = C.isOffDay(d), hol = C.isHoliday(d), b = state.series ? dayBest(d, favMode) : null;
+      var top = i === 0 ? '今日' : i === 1 ? '明日' : wd(d) + (hol ? '祝' : '');
+      return '<button class="day" role="tab" data-action="day" data-day="' + d + '" aria-selected="' + (d === day) + '">' +
+        '<b>' + top + '</b><small class="num' + (off ? ' off' : '') + '">' + md(d) + '</small>' +
+        '<span class="dm t-' + (b ? b.grade.tone : 'none') + '" style="color:var(--tone)" aria-label="' + (b ? (favMode ? 'お気に入りのベスト ' : 'ベスト ') + b.grade.word : '') + '">' + (b ? b.grade.mark : '') + '</span></button>';
+    }).join('');
+  }
+  function renderInstall() {
+    var el = document.getElementById('install');
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+    if (standalone || state.installHidden) { el.hidden = true; return; }
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    var how = state.installPrompt ? 'ボタンひとつでホーム画面に追加できます。' :
+      ios ? 'Safariの共有ボタン（□に↑）から「ホーム画面に追加」を選ぶと、アプリとして使えます。' :
+        'ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選ぶと、アプリとして使えます。';
+    el.className = 'install';
+    el.innerHTML = '<img src="icon-192.png" alt="" width="40" height="40"><p><b>ホーム画面に追加しよう</b>' + how + '</p>' +
+      '<div class="acts">' + (state.installPrompt ? '<button class="go" data-action="install">追加する</button>' : '') + '<button class="no" data-action="install-hide">閉じる</button></div>';
+    el.hidden = false;
+  }
+  function renderSummary(day, evals) {
+    var L = C.lunarInfo(day), sun = C.sunTimes(day, 35.4, 140.0);
+    var v = state.series ? verdictText(day, evals) : null;
+    var html = v ? '<p class="verdict"><b>' + esc(v.lead) + '</b>' + esc(v.rest) + '</p>' : '';
+    html += '<div class="sky" aria-label="潮回りと日の出">' + moonSvg(L.phase) +
+      '<div class="fact"><b>' + L.tideName + '</b><small>月齢 <span class="num">' + L.age.toFixed(1) + '</span></small></div>' +
+      '<div class="fact"><b class="num">' + C.hmFromMin(sun.rise) + '</b><small>日の出</small></div>' +
+      '<div class="fact"><b class="num">' + C.hmFromMin(sun.set) + '</b><small>日の入</small></div></div>';
+    document.getElementById('summary').innerHTML = html;
+  }
+  function heroTidePath(station, day) {
+    var pts = tideFor(station, day).points, t0 = C.jstMidnight(day);
+    var zs = pts.map(function (p) { return p.z; }), lo = Math.min.apply(null, zs), hi = Math.max.apply(null, zs), span = Math.max(30, hi - lo);
+    var xy = pts.map(function (p) { return ((p.t - t0) / DAY * 300).toFixed(1) + ',' + (60 - ((p.z - lo) / span) * 34 - 8).toFixed(1); });
+    return '<svg class="hero-tide" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0,60 L' + xy.join(' L') + ' L300,60 Z"/><polyline points="' + xy.join(' ') + '"/></svg>';
+  }
+  function renderPicks(day, evals) {
+    var el = document.getElementById('picks'), dn = dayName(day);
+    if (!state.series) {
+      el.innerHTML = state.error
+        ? '<div class="note-card"><b>波と風のデータを取得できませんでした</b>電波の良い場所で、もう一度読み込んでください。潮回り・潮位・日の出は下で確認できます。<br><button data-action="refresh">もう一度読み込む</button></div>'
+        : '<div class="note-card"><b>波と風のデータを読み込んでいます</b>波のサイズと風から、' + dn + 'いちばん良さそうなポイントをここに出します。</div>';
+      return;
+    }
+    var ranked = evals.filter(function (e) { return e.best; }).sort(function (a, b) { return (b.best.score - a.best.score) || (a.spot.order - b.spot.order); });
+    if (!ranked.length) {
+      var ended = evals.some(function (e) { return e.ended; });
+      el.innerHTML = '<div class="note-card"><b>' + (ended ? '今日の日中は終わりました' : 'この日のデータはまだありません') + '</b>' + (ended ? '明日のタブで次の波をチェックできます。' : '') + '</div>';
+      return;
+    }
+    var top = ranked[0], b = top.best, g = top.grade, grp = GROUP_BY_ID[top.spot.group], lv = C.levelGuideHb(b.hb);
+    var tides = nextTides(top.spot, day);
+    el.innerHTML = '<article class="hero t-' + g.tone + '">' + heroTidePath(top.spot.tide, day) +
+      '<p class="eyebrow">' + dn + 'のいちおし</p>' +
+      '<div class="hero-head"><span class="grade">' + g.mark + '</span><span class="word">' + g.word + '</span>' + (lv ? '<span class="tag t-' + lv.tone + '">' + lv.label + '</span>' : '') + '</div>' +
+      '<h3>' + esc(top.spot.name) + '<small>' + esc(grp.name) + '・' + esc(top.spot.town) + '</small></h3>' +
+      '<p class="hero-size">' + sizeHTML(b.hb) + '</p>' +
+      '<p class="hero-line"><span class="when">' + whenWord(b, day) + '</span>' + windInline(b) + crowdInline(b) + '</p>' +
+      '<p class="hero-meta">' + esc(swellText(b)) + (b.sst != null ? ' ・ 水温 ' + fmt1(b.sst) + '℃' : '') + (tides.length ? ' ・ ' + tides.join(' / ') : '') + '</p>' +
+      '<button class="hero-open" data-action="spot" data-id="' + top.spot.id + '">くわしく見る</button></article>';
+  }
+  function renderCoasts(day, evals) {
+    var el = document.getElementById('coasts');
+    if (!state.series) { el.innerHTML = ''; return; }
+    el.innerHTML = '<h2 class="sec">エリア別</h2><div class="agrid">' + coastBests(evals).map(function (x) {
+      var g = x.g, e = x.best;
+      if (!e) return '<button class="acard dim t-none" data-action="filter" data-filter="' + g.id + '"><span class="a-top"><span class="a-name">' + esc(g.name) + '</span><span class="grade sm">·</span></span><span class="a-spot">データなし</span></button>';
+      var b = e.best, gr = e.grade;
+      return '<button class="acard t-' + gr.tone + '" data-action="filter" data-filter="' + g.id + '">' +
+        '<span class="a-top"><span class="a-name">' + esc(g.name) + '</span><span class="grade sm">' + gr.mark + '</span></span>' +
+        '<span class="a-spot">ベストは' + esc(e.spot.name) + '</span><span class="a-size">' + sizeHTML(b.hb) + '</span>' +
+        '<span class="a-row">' + windCompact(b) + '</span><span class="a-row">' + crowdInline(b) + '</span></button>';
+    }).join('') + '</div>';
+  }
+
+  /* ---------- list ---------- */
+  function renderChips() {
+    var favN = state.favs.length;
+    document.getElementById('chips').innerHTML = FILTERS.map(function (f) {
+      var label = f.id === 'fav' && favN ? f.label + ' ' + favN : f.label;
+      return '<button class="chip" data-action="filter" data-filter="' + f.id + '" aria-pressed="' + (state.filter === f.id) + '">' + esc(label) + '</button>';
+    }).join('') + '<span class="chip-sep" aria-hidden="true"></span>' + GROUPS.map(function (g) {
+      return '<button class="chip" data-action="filter" data-filter="' + g.id + '" aria-pressed="' + (state.filter === g.id) + '">' + esc(g.name) + '</button>';
+    }).join('');
+  }
+  function jmaLines(g, day, areas) {
+    var doc = state.jma[g.pref];
+    if (!doc) return '';
+    return areas.map(function (a) {
+      var ad = C.areaDay({ pref: state.jma, wind: {} }, g.pref, a, day);
+      if (!ad || !ad.waves) return '';
+      var wt = ad.wind.text || '', w1 = ad.wind.sea ? wt.slice(0, wt.indexOf(ad.wind.sea)).trim() : wt;
+      return '<p class="jma"><b>気象庁の予報</b>（' + JMA_AREA[a] + '）波 ' + esc(ad.waves.text.replace(/ /g, '')) + (w1 ? ' ／ ' + esc(w1.replace(/ /g, '')) : '') + '</p>';
+    }).join('');
+  }
+  function spotRow(ev, day) {
+    var s = ev.spot, isFav = state.favs.indexOf(s.id) >= 0, b = ev.best, g = ev.grade;
+    var tone = g ? g.tone : 'none', mark = g ? g.mark : (ev.ended ? '－' : '·');
+    var meta = ev.ended ? '<span class="w t-none">日中は終了</span>' : (b ? '<span class="when">' + whenWord(b, day) + '</span>' + windInline(b) + crowdInline(b, true) : '<span class="w t-none">データなし</span>');
+    return '<li><button class="row t-' + tone + '" data-action="spot" data-id="' + s.id + '" id="row-' + s.id + '">' +
+      '<span class="grade" aria-label="' + (g ? g.word : '評価なし') + '">' + mark + '</span>' +
+      '<span class="r-name">' + esc(s.name) + (isFav ? '<span class="fav" aria-label="お気に入り">★</span>' : '') + (C.beginnerHour(b) ? '<span class="tag t-good">初心者OK</span>' : '') + '</span>' +
+      '<span class="r-size">' + (b ? C.sizeLabelHb(b.hb) : '—') + '</span>' +
+      '<span class="r-meta">' + meta + '</span><span class="r-go" aria-hidden="true">›</span></button></li>';
+  }
+  function renderGroups(day, evals) {
+    var byId = {}; evals.forEach(function (e) { byId[e.spot.id] = e; });
+    var f = state.filter, html = '';
+    function pass(s) {
+      if (f === 'fav') return state.favs.indexOf(s.id) >= 0;
+      if (f === 'beginner') return C.beginnerHour(byId[s.id].best);
+      if (GROUP_BY_ID[f]) return s.group === f;
+      return true;
+    }
+    GROUPS.forEach(function (g) {
+      var spots = SPOTS.filter(function (s) { return s.group === g.id && pass(s); });
+      if (!spots.length) return;
+      var areas = []; spots.forEach(function (s) { if (areas.indexOf(s.area) < 0) areas.push(s.area); });
+      html += '<section><div class="ghead"><h3>' + esc(g.name) + '<small>' + esc(g.sub) + '</small></h3>' + jmaLines(g, day, areas) + '</div>' +
+        '<ul class="rows">' + spots.map(function (s) { return spotRow(byId[s.id], day); }).join('') + '</ul></section>';
+    });
+    if (!html) html = '<div class="empty">' + (f === 'fav' ? 'ポイントの画面で「☆ お気に入り」を押すと、ここにまとめて並びます。' :
+      f === 'beginner' ? dayName(day) + 'は初心者向けのコンディション（ハラ以下で風が穏やか）のポイントがありません。' : '該当するポイントがありません。') + '</div>';
+    document.getElementById('groups').innerHTML = html;
+  }
+  function renderAbout() {
+    var legend = [['good', '◎', 'いい波期待'], ['okay', '○', '楽しめそう'], ['fair', '△', 'まあまあ'], ['poor', '×', '厳しそう'], ['bad', '－', '期待薄'], ['danger', '!', '危険']];
+    document.getElementById('about').innerHTML =
+      '<p>茨城・千葉北・千葉南・湘南の' + SPOTS.length + 'ポイント ・ 7日先まで ・ 無料</p>' +
+      '<details><summary>評価のしくみとデータについて</summary>' +
+      '<div class="legend">' + legend.map(function (l) { return '<span class="t-' + l[0] + '"><span class="grade">' + l[1] + '</span>' + l[2] + '</span>'; }).join('') + '</div><ul>' +
+      '<li>波・風・水温は、Open-Meteoが公開している海外の数値モデルの計算値です。気象庁の予報ではなく、大きな誤差を含むことがあります。</li>' +
+      '<li>ヒザ〜アタマのサイズは、計算値の波の高さ・周期・向きと海岸の向きから出した目安です。地形や潮で大きく変わります。</li>' +
+      '<li>◎〜－は、サイズ・うねりの周期・風向き（オフショア〜オンショア）・風の強さを組み合わせた目安です。「初心者OK」はハラ以下で風が穏やかなときに付きます。</li>' +
+      '<li>混雑は、平日か土日祝か、時間帯、波のよさ、ポイントの人気、季節、天気から出した予想で、実際の人数ではありません。</li>' +
+      '<li>潮位は気象庁の調和定数から計算した推算値で、気象庁の潮位表と10〜30分ほどずれることがあります。</li>' +
+      '<li>「気象庁の予報」の行は、気象庁が発表した文をそのまま表示しています（読み込めない環境では出ません）。</li>' +
+      '</ul></details>' +
+      '<p>海に入る前に、気象庁の<a href="https://www.jma.go.jp/bosai/warning/" target="_blank" rel="noopener">波浪注意報・警報</a>と現地の様子を必ず確認してください。</p>' +
+      '<p class="model-note">Weather & marine data: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>（CC BY 4.0）／潮位: 気象庁の調和定数をもとに推算</p>';
+  }
+
+  /* ---------- spot screen ---------- */
+  function hourChart(ev, day, W) {
+    var hrs = ev.hours.filter(function (h) { return h.hour >= 4 && h.hour <= 19; });
+    if (!hrs.length) return '<p class="model-note">この日のデータはありません。</p>';
+    W = Math.round(Math.max(280, Math.min(720, W)));
+    var H = 196, L = 4, R = 4, top = 20, ch = 96, base = top + ch, arrowY = base + 24, wsY = arrowY + 22, axY = H - 4;
+    var n = hrs.length, bw = (W - L - R) / n;
+    var maxHb = Math.max(1.9, Math.max.apply(null, hrs.map(function (h) { return h.hb || 0; })) * 1.12);
+    function Y(v) { return base - v / maxHb * ch; }
+    var s = '';
+    hrs.forEach(function (h, i) { if (!h.daylight) s += '<rect class="night" x="' + (L + i * bw).toFixed(1) + '" y="0" width="' + bw.toFixed(1) + '" height="' + (H - 14) + '"/>'; });
+    var guides = [[0.85, 'コシ'], [1.2, 'ムネ'], [1.75, 'アタマ'], [2.4, '頭オーバー'], [3.2, '頭半']].filter(function (gd) { return gd[0] < maxHb; });
+    guides.forEach(function (gd) { var y = Y(gd[0]).toFixed(1); s += '<line class="guide" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/>'; });
+    hrs.forEach(function (h, i) {
+      if (h.hb == null) return;
+      var g = h.score != null ? C.gradeHb(h.score, h.hb) : null;
+      var x = L + i * bw + Math.max(1.5, bw * 0.14), w = Math.max(3, bw - 2 * Math.max(1.5, bw * 0.14)), y = Y(h.hb);
+      s += '<rect class="hbar t-' + (g ? g.tone : 'none') + (h.past ? ' dim' : '') + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + Math.max(1, base - y).toFixed(1) + '" rx="2"/>';
+    });
+    s += '<line class="guide" x1="' + L + '" x2="' + (W - R) + '" y1="' + base + '" y2="' + base + '" style="stroke-dasharray:none"/>';
+    guides.forEach(function (gd) { s += '<text class="glab" x="' + (W - R - 2) + '" y="' + (Y(gd[0]) - 3).toFixed(1) + '" text-anchor="end">' + gd[1] + '</text>'; });
+    hrs.forEach(function (h, i) {
+      var cx = L + (i + 0.5) * bw;
+      if (h.wd != null) {
+        var sc = Math.min(1, bw / 18);
+        s += '<g class="t-' + relTone(h.rel) + '" transform="translate(' + cx.toFixed(1) + ',' + arrowY + ') rotate(' + ((h.wd + 180) % 360) + ') scale(' + sc.toFixed(2) + ')"><path class="warr" d="M0,-8 L6,0 L2.2,0 L2.2,8 L-2.2,8 L-2.2,0 L-6,0 Z"/></g>';
+      }
+      if (h.ws != null && (i % 2 === 0 || bw >= 26)) s += '<text class="ws" x="' + cx.toFixed(1) + '" y="' + wsY + '" text-anchor="middle">' + Math.round(h.ws) + '</text>';
+      if (h.hour % 3 === 0) s += '<text class="axis" x="' + cx.toFixed(1) + '" y="' + axY + '" text-anchor="middle">' + h.hour + '時</text>';
+    });
+    if (day === todayKey()) {
+      var t0 = C.jstMidnight(day), first = hrs[0].t, xn = L + ((state.now - first) / HOUR + 0.5) * bw;
+      if (xn > L && xn < W - R) s += '<line class="now" x1="' + xn.toFixed(1) + '" x2="' + xn.toFixed(1) + '" y1="4" y2="' + (wsY + 2) + '"/>';
+    }
+    s += '<text class="rowlab" x="' + L + '" y="12">サイズ</text><text class="rowlab" x="' + L + '" y="' + (arrowY - 14) + '">風</text>';
+    return '<svg class="hchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="1時間ごとの波のサイズと風">' + s + '</svg>' +
+      '<div class="legend-row"><span class="t-good"><i></i>◎</span><span class="t-okay"><i></i>○</span><span class="t-fair"><i></i>△</span><span class="t-poor"><i></i>×</span><span>矢印は風の向き・数字は風速m/s</span></div>';
+  }
+  function weekStrip(spot, day) {
+    return '<div class="week">' + dayList().map(function (d, i) {
+      var e = evalFor(spot, d), b = e.best, g = e.grade, off = C.isOffDay(d);
+      return '<button class="wk t-' + (g ? g.tone : 'none') + '" data-action="day" data-day="' + d + '" aria-current="' + (d === day) + '">' +
+        '<b>' + (i === 0 ? '今日' : i === 1 ? '明日' : wd(d)) + '</b><small class="num' + (off ? ' off' : '') + '">' + md(d) + '</small>' +
+        '<span class="wm">' + (g ? g.mark : '·') + '</span><span class="wsz">' + (b ? C.part(b.hb).replace('頭オーバー', '頭上') : '—') + '</span></button>';
+    }).join('') + '</div>';
+  }
+  function compassSvg(facing, h) {
+    var cx = 60, cy = 60, R = 42;
+    function P(b, r) { var a = b * Math.PI / 180; return [cx + r * Math.sin(a), cy - r * Math.cos(a)]; }
+    function pt(p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }
+    var s1 = P(facing - 90, R), s2 = P(facing + 90, R);
+    var s = '<path class="c-land" d="M' + pt(s2) + ' A' + R + ',' + R + ' 0 0 1 ' + pt(s1) + ' Z"/>' +
+      '<path class="c-sea" d="M' + pt(s1) + ' A' + R + ',' + R + ' 0 0 1 ' + pt(s2) + ' Z"/>' +
+      '<line class="c-beach" x1="' + s1[0].toFixed(1) + '" y1="' + s1[1].toFixed(1) + '" x2="' + s2[0].toFixed(1) + '" y2="' + s2[1].toFixed(1) + '"/>';
+    [0, 90, 180, 270].forEach(function (b) { var a = P(b, R + 3), c = P(b, R + 8); s += '<line class="c-tick" x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + c[0].toFixed(1) + '" y2="' + c[1].toFixed(1) + '"/>'; });
+    s += '<text class="c-n" x="60" y="7.5" text-anchor="middle">北</text>';
+    var seaL = P(facing, R * 0.62), landL = P(facing + 180, R * 0.62), tone = 'none';
+    if (h && h.wd != null) {
+      tone = relTone(h.rel);
+      var a = P(h.wd, R + 12), b = P(h.wd + 180, R - 12);
+      var ux = b[0] - a[0], uy = b[1] - a[1], len = Math.sqrt(ux * ux + uy * uy); ux /= len; uy /= len;
+      var tip = [b[0] + ux * 4, b[1] + uy * 4], bx = b[0] - ux * 6, by = b[1] - uy * 6;
+      s += '<line class="c-arrow" x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + bx.toFixed(1) + '" y2="' + by.toFixed(1) + '"/>' +
+        '<polygon class="c-head" points="' + pt(tip) + ' ' + (bx - uy * 7).toFixed(1) + ',' + (by + ux * 7).toFixed(1) + ' ' + (bx + uy * 7).toFixed(1) + ',' + (by - ux * 7).toFixed(1) + '"/>';
+    }
+    s += '<text class="c-lab sea" x="' + seaL[0].toFixed(1) + '" y="' + (seaL[1] + 4).toFixed(1) + '" text-anchor="middle">海</text>' +
+      '<text class="c-lab" x="' + landL[0].toFixed(1) + '" y="' + (landL[1] + 4).toFixed(1) + '" text-anchor="middle">陸</text>';
+    return '<svg class="compass t-' + tone + '" viewBox="0 0 120 120" role="img" aria-label="海岸の向きと風向き' + (h && h.wd != null ? '：' + C.dir8(h.wd) + 'の風' : '') + '">' + s + '</svg>';
+  }
+  function tideSvg(spot, day, W) {
+    var r = tideFor(spot.tide, day), pts = r.points, t0 = C.jstMidnight(day);
+    W = Math.round(Math.max(280, Math.min(720, W)));
+    var H = 170, L = 8, R = 8, T = 10, B = 24;
+    var zs = pts.map(function (p) { return p.z; }), lo = Math.min.apply(null, zs), hi = Math.max.apply(null, zs);
+    var span = Math.max(40, hi - lo), mid = (hi + lo) / 2; lo = mid - span / 2; hi = mid + span / 2;
+    function X(t) { return L + (t - t0) / DAY * (W - L - R); }
+    function Y(z) { return T + 20 + (hi - z) / (hi - lo) * (H - T - B - 40); }
+    var sun = C.sunTimes(day, spot.lat, spot.lon), s = '';
+    s += '<rect class="night" x="' + X(t0).toFixed(1) + '" y="' + T + '" width="' + (X(t0 + sun.rise * 60000) - X(t0)).toFixed(1) + '" height="' + (H - T - B) + '"/>';
+    s += '<rect class="night" x="' + X(t0 + sun.set * 60000).toFixed(1) + '" y="' + T + '" width="' + (X(t0 + DAY) - X(t0 + sun.set * 60000)).toFixed(1) + '" height="' + (H - T - B) + '"/>';
+    [0, 6, 12, 18, 24].forEach(function (h) {
+      var x = X(t0 + h * HOUR);
+      s += '<line class="grid" x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>';
+      s += '<text class="axis" x="' + x.toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + (h === 0 ? 'start' : h === 24 ? 'end' : 'middle') + '">' + h + '時</text>';
+    });
+    var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(p.t).toFixed(1) + ',' + Y(p.z).toFixed(1); }).join('');
+    s += '<path class="area" d="' + line + 'L' + X(t0 + DAY).toFixed(1) + ',' + (H - B) + 'L' + X(t0).toFixed(1) + ',' + (H - B) + 'Z"/><path class="line" d="' + line + '"/>';
+    r.extremes.forEach(function (e) {
+      var x = X(e.t), y = Y(e.z), hiType = e.type === 'high', lx = Math.min(W - R - 42, Math.max(L + 42, x));
+      s += '<circle class="dot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="4"/>';
+      s += '<text class="lab" x="' + lx.toFixed(1) + '" y="' + (hiType ? y - 9 : y + 17).toFixed(1) + '" text-anchor="middle">' + (hiType ? '満 ' : '干 ') + hm(e.t) + ' ' + Math.round(e.z) + '</text>';
+    });
+    if (C.jstKey(state.now) === day) {
+      var xn = X(state.now), yn = Y(C.tideAt(spot.tide, state.now));
+      s += '<line class="now" x1="' + xn.toFixed(1) + '" x2="' + xn.toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/><circle class="nowdot" cx="' + xn.toFixed(1) + '" cy="' + yn.toFixed(1) + '" r="5"/>';
+    }
+    var aria = r.extremes.map(function (e) { return (e.type === 'high' ? '満潮' : '干潮') + hm(e.t) + '（' + Math.round(e.z) + 'cm）'; }).join('、');
+    return '<svg class="tide" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="潮位グラフ ' + aria + '">' + s + '</svg>';
+  }
+  function tideNowText(spot, day) {
+    if (day !== todayKey()) return '';
+    var z = C.tideAt(spot.tide, state.now), z2 = C.tideAt(spot.tide, state.now + 15 * 60000);
+    return ' <span class="nowtxt">● いま <span class="num">' + Math.round(z) + 'cm</span>・' + (z2 >= z ? '上げ潮' : '下げ潮') + '</span>';
+  }
+  function renderSheet(day) {
+    var sheet = document.getElementById('sheet');
+    var s = state.open && SPOT_BY_ID[state.open];
+    if (!s) { if (!sheet.hidden) { sheet.hidden = true; document.documentElement.classList.remove('lock'); } return; }
+    var ev = evalFor(s, day), grp = GROUP_BY_ID[s.group], isFav = state.favs.indexOf(s.id) >= 0;
+    var b = ev.best, g = ev.grade, lv = b ? C.levelGuideHb(b.hb) : null;
+    var focus = b || ev.hours.filter(function (h) { return h.daylight && !h.past; })[0] || null;
+    var L = C.lunarInfo(day), sun = C.sunTimes(day, s.lat, s.lon), st = C.STATIONS[s.tide];
+    var sst = focus && focus.sst != null ? focus.sst : C.seaTemp(WATER[s.group], day);
+    var W = (document.getElementById('sheetbody').clientWidth || Math.min(760, window.innerWidth) - 32) - 30;
+    var windy = 'https://www.windy.com/?waves,' + s.lat.toFixed(3) + ',' + s.lon.toFixed(3) + ',11';
+    var jmaUrl = 'https://www.jma.go.jp/bosai/forecast/#area_type=class10s&area_code=' + s.area;
+    var warnUrl = 'https://www.jma.go.jp/bosai/warning/#area_type=offices&area_code=' + grp.pref;
+    var tideUrl = 'https://www.data.jma.go.jp/kaiyou/db/tide/suisan/suisan.php?stn=' + s.tide;
+    var camUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(s.cam);
+
+    document.getElementById('sheetbar').innerHTML =
+      '<button class="back" data-action="close" id="sheet-back">‹ 一覧</button>' +
+      '<span class="sheet-day">' + dayName(day) + (day === todayKey() || day === C.addDays(todayKey(), 1) ? ' ' + md(day) + '(' + wd(day) + ')' : '') + '</span>' +
+      '<button class="fav-top" data-action="fav" data-id="' + s.id + '" aria-pressed="' + isFav + '">' + (isFav ? '★ 登録済み' : '☆ お気に入り') + '</button>';
+
+    var head = '<header class="sp-head t-' + (g ? g.tone : 'none') + '">' +
+      '<p class="sp-area">' + esc(grp.name) + '・' + esc(s.town) + '</p><h2 id="sheet-title">' + esc(s.name) + '</h2>' +
+      (g ? '<div class="sp-verdict"><span class="grade">' + g.mark + '</span><span class="word">' + g.word + '</span>' + (lv ? '<span class="tag t-' + lv.tone + '">' + lv.label + '</span>' : '') + '</div>' : '') +
+      '<p class="sp-size">' + (b ? sizeHTML(b.hb) : (ev.ended ? '日中は終了' : 'データなし')) + '</p>' +
+      '<p class="sp-sub">' + (b ? whenWord(b, day) + 'がいちばん良さそう ・ ' + esc(swellText(b)) : '') + '</p></header>';
+
+    var wind;
+    if (focus && focus.wd != null) {
+      var rel = focus.rel ? C.REL[focus.rel] : null;
+      wind = '<section class="card"><div class="windsum t-' + relTone(focus.rel) + '">' + compassSvg(s.facing, focus) + '<div>' +
+        '<p class="dlabel">' + whenWord(focus, day) + 'の風</p>' +
+        '<p class="ws-main">' + C.dir8(focus.wd) + 'の風 <span class="num">' + Math.round(focus.ws) + 'm/s</span>' + bars(focus.level) + '</p>' +
+        (focus.wg != null ? '<p class="ws-desc">最大瞬間 <span class="num">' + Math.round(focus.wg) + 'm/s</span>' + (focus.code != null ? ' ・ ' + C.wmoText(focus.code) : '') + (focus.temp != null ? ' ・ 気温 ' + Math.round(focus.temp) + '℃' : '') + '</p>' : '') +
+        (rel ? '<p class="ws-rel">' + rel.label + '</p><p class="ws-desc">' + rel.desc + '</p>' : '') + '</div></div></section>';
+    } else {
+      wind = '<section class="card"><div class="windsum">' + compassSvg(s.facing, null) + '<div><p class="dlabel">風</p><p class="ws-desc">この時間帯の風のデータはありません。</p></div></div></section>';
+    }
+    var crowd = focus && focus.crowd ? '<section class="card"><p class="dlabel">混雑</p><div class="crowd-main t-' + focus.crowd.tone + '">' + people(focus.crowd.n) + '<b>' + focus.crowd.label + '</b><small>（' + (focus.crowd.off ? '土日祝' : '平日') + '・' + whenWord(focus, day) + 'の予想）</small></div>' +
+      '<p class="crowd-note">曜日・時間帯・波のよさ・ポイントの人気・季節・天気から出した目安です。実際の様子はライブカメラで確かめてください。</p></section>' : '';
+    var jmaDoc = state.jma[grp.pref], ad = jmaDoc ? C.areaDay({ pref: state.jma, wind: {} }, grp.pref, s.area, day) : null;
+
+    document.getElementById('sheetbody').innerHTML = head +
+      '<section class="card"><p class="dlabel">1時間ごとの波と風</p>' + hourChart(ev, day, W) + '</section>' +
+      '<section><p class="dlabel">7日間</p>' + weekStrip(s, day) + '</section>' +
+      wind +
+      '<section class="card"><p class="dlabel">潮位（' + esc(st.name) + '・推算）' + tideNowText(s, day) + '</p>' + tideSvg(s, day, W) + '</section>' +
+      crowd +
+      '<section class="card"><p class="dlabel">ポイント情報</p><dl class="facts">' +
+      '<div><dt>海岸の向き</dt><dd>' + C.dir8(s.facing) + '向き<small>' + C.dir8(s.facing - 45) + '〜' + C.dir8(s.facing + 45) + 'のうねりが入る</small></dd></div>' +
+      '<div><dt>オフショアになる風</dt><dd>' + C.dir8(s.facing + 180) + '寄りの風<small>陸から海へ吹く向き</small></dd></div>' +
+      '<div><dt>日の出 / 日の入</dt><dd class="num">' + C.hmFromMin(sun.rise) + ' / ' + C.hmFromMin(sun.set) + '</dd></div>' +
+      '<div><dt>潮回り</dt><dd>' + L.tideName + '<small>月齢 ' + L.age.toFixed(1) + '</small></dd></div>' +
+      '<div><dt>水温</dt><dd>約' + Math.round(sst) + '℃<small>' + C.wetsuit(sst) + '</small></dd></div>' +
+      '<div><dt>波の周期</dt><dd>' + (b && b.tp != null ? Math.round(b.tp) + '秒' : '—') + '<small>' + (b && b.tp != null ? (b.tp >= 10 ? '長めのうねりで力がある' : b.tp >= 7 ? 'ふつう' : '短い風波でまとまりにくい') : '') + '</small></dd></div>' +
+      '</dl></section>' +
+      (ad && ad.waves ? '<section><p class="dlabel">気象庁の予報（' + esc(JMA_AREA[s.area]) + '）</p><p class="jma-raw"><b>波</b> ' + esc(ad.waves.text) + '<br><b>風</b> ' + esc(ad.wind.text || '—') + '<br><b>天気</b> ' + esc(ad.weather || '—') + '</p></section>' : '') +
+      '<div class="actions">' +
+      '<a href="' + camUrl + '" target="_blank" rel="noopener">ライブカメラを探す ↗</a>' +
+      '<a href="' + warnUrl + '" target="_blank" rel="noopener">波浪注意報・警報 ↗</a>' +
+      '<a href="' + jmaUrl + '" target="_blank" rel="noopener">気象庁の予報 ↗</a>' +
+      '<a href="' + windy + '" target="_blank" rel="noopener">Windy ↗</a>' +
+      '<a href="' + tideUrl + '" target="_blank" rel="noopener">潮位表 ↗</a></div>' +
+      '<p class="model-note">波・風・水温は数値モデルの計算値（Open-Meteo）で、予報ではありません。大きな誤差を含むことがあります。</p>';
+
+    if (sheet.hidden) {
+      sheet.hidden = false;
+      document.documentElement.classList.add('lock');
+      document.getElementById('sheetscroll').scrollTop = 0;
+      var back = document.getElementById('sheet-back'); if (back) back.focus({ preventScroll: true });
+      if (W < 300) requestAnimationFrame(render); // first paint measured a hidden sheet; redraw at real width
+    }
+  }
+
+  var focusKey = null;
+  function render() {
+    var day = currentDay();
+    var evals = SPOTS.map(function (s) { return evalFor(s, day); });
+    renderMeta();
+    renderDays(day);
+    renderInstall();
+    renderSummary(day, evals);
+    renderPicks(day, evals);
+    renderCoasts(day, evals);
+    renderChips();
+    renderGroups(day, evals);
+    renderAbout();
+    renderSheet(day);
+    if (focusKey) { var el = document.querySelector(focusKey); if (el) el.focus({ preventScroll: true }); focusKey = null; }
+  }
+
+  /* ---------- interactions ---------- */
+  function closeSpot() {
+    var id = state.open;
+    state.open = null;
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    render();
+    var row = id && document.getElementById('row-' + id);
+    if (row) { row.focus({ preventScroll: true }); row.scrollIntoView({ block: 'nearest' }); }
+  }
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-action]');
+    if (!t) return;
+    var a = t.getAttribute('data-action');
+    if (a === 'day') { state.day = t.getAttribute('data-day'); focusKey = (state.open ? '#sheetbody ' : '#days ') + '[data-day="' + state.day + '"]'; render(); }
+    else if (a === 'filter') {
+      state.filter = t.getAttribute('data-filter'); store.set('filter', state.filter); render();
+      if (t.classList.contains('acard')) { var list = document.getElementById('list'); if (list) list.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+      else focusKey = '#chips [data-filter="' + state.filter + '"]';
+    }
+    else if (a === 'spot') { state.open = t.getAttribute('data-id'); history.replaceState(null, '', '#' + state.open); render(); }
+    else if (a === 'close') closeSpot();
+    else if (a === 'fav') {
+      var fid = t.getAttribute('data-id'), i = state.favs.indexOf(fid);
+      if (i >= 0) state.favs.splice(i, 1); else state.favs.push(fid);
+      store.set('favs', state.favs);
+      focusKey = '#sheetbar [data-action="fav"]';
+      render();
+    }
+    else if (a === 'refresh') load(true);
+    else if (a === 'install' && state.installPrompt) {
+      var p = state.installPrompt; state.installPrompt = null;
+      p.prompt(); p.userChoice.then(function () { render(); }, function () { render(); });
+    }
+    else if (a === 'install-hide') { state.installHidden = true; store.set('installHidden', true); render(); }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.open) closeSpot(); });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); state.installPrompt = e; render(); });
+  window.addEventListener('appinstalled', function () { state.installHidden = true; render(); });
+  window.addEventListener('hashchange', function () { var h = location.hash.replace('#', ''); state.open = SPOT_BY_ID[h] ? h : null; render(); });
+  window.addEventListener('online', function () { load(false); });
+
+  var hash = (location.hash || '').replace('#', '');
+  if (SPOT_BY_ID[hash]) state.open = hash;
+  render();
+  load(false);
+  loadJMA();
+  setInterval(function () {
+    if (document.hidden) return;
+    var before = C.jstKey(state.now);
+    state.now = Date.now();
+    evalCache = {};
+    if (C.jstKey(state.now) !== before) tideCache = {};
+    render();
+  }, 60000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    state.now = Date.now();
+    evalCache = {};
+    if (!state.fetchedAt || Date.now() - state.fetchedAt > MAX_AGE) load(false); else render();
+  });
+  var rz = null, lastW = window.innerWidth;
+  window.addEventListener('resize', function () {
+    if (Math.abs(window.innerWidth - lastW) < 8) return;
+    lastW = window.innerWidth;
+    clearTimeout(rz); rz = setTimeout(render, 150);
+  });
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* offline cache unavailable */ }); });
+  }
+})();
+</script>
+</body>
+</html>
